@@ -1,13 +1,24 @@
-\documentclass[11pt,a4paper,oneside]{report}
+\documentclass[12pt,a4paper,oneside]{report}
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx, titlesec}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{cite}
 \titleformat{\chapter}
 	{\normalfont\Large\bfseries}{\thechapter.}{1em}{}
 \graphicspath{ {images/} }
 
+\newcommand{\appname}{ablubb}
+\newcommand{\blubb}{blubb}
+\newcommand{\beapDB}{beapDB}
+\newcommand{\beapServer}{beap server}
+
 \begin{document}
+
+\bibliographystyle{ieeetr}
+%\citep{}, \citet{}, \citep*{}
 \title{
-	{\huge blubb documentation}
+	{\huge \appname{} documentation}
 	{\\ \large Hochschule Heilbronn}
 }
 \author{Benjamin Richter}
@@ -16,18 +27,72 @@
 \tableofcontents
 
 \chapter{Introduction}
+
 \section{Project description}
-This is a ample introduction section.\\
-This is a second line in the introduction.\\
 
 \section{Project management and communication}
+%comment
+project management \cite{mihaela2013measurement}. 
+
 
 \section{General goals}
+
 
 \chapter{Execution}
 
 \section{Backlog}
 
+\begin{itemize}
+     \item As a User, I don't want a message I wrote but did not send to disappear.
+     \item As a User, I want to shut down the application. 
+     \item As a User, I want to choose my own password. 
+     \item As a Admin, I want to open a new Admin thread.
+     \item As a Manager, I want to open a new Management thread. 
+     \item As a Manager, I want to show a TASK only to some Users. 
+     \item As a User, I want to finish a TASK (mark it as finished). 
+     \item As a User, I want to take a TASK.
+     \item As a User, I want to view only TASKS from a thread or all threads.
+     \item As a Manager, I want to post TASKS User can work on. 
+     \item As a User, I want to view only QUESTIONS from a thread or from all threads. 
+     \item As a User, I want to ask some other User a QUESTION and view the results as a chart. 
+     \item As a User, I want to edit my own profile description. 
+     \item As a User, I want to see profiles of others with description, status, profile picture and batches he/she earned.
+     \item As a User, I want to earn rewards/batches for my engagement within Blubb.
+     \item As a User, I want to edit my "thread profiles".
+     \item As a User, I want to switch off notifications on my mobile.
+     \item As a User, I want to change my profile picture by uploading another one.
+     \item As a User, I want to change how often my mobile pulls new messages.
+     \item As a User, I want to show others what I'm doing right now via some kind of "status".
+     \item As a User, I want to have a profile picture which is shown with my messages.
+     \item As an Admin, I want to reset a Users password when he/she forgot her password.
+     \item As an Admin, I want to delete a thread from an User.
+     \item As an Admin, I want to delete messages from an User.
+     \item As a User, I want to have some kind of link to quoted messages so that I can read immediately what has been quoted.
+     \item As a User, I want to quote another message.
+     \item As a User, I want to hide different threads on my mobile and on the web front end. For this I want some kind of profiles where I can manage which thread to hide.
+     \item As a User, I want to hide messages from threads so I don't have to read all the messages from e.g. the coffee break thread.
+     \item As a User, I want to search for a word within a single thread.
+     \item As a User, I want to search for a word and expect to see all messages from all threads containing this word, sorted chronological.
+     \item As a User, I want to view my "like Count" for a period of time, e.g. last week.
+     \item As a User, I want to view my "like Count" so I can see how many likes I've got for all my messages.
+     \item As a User, I want to be able to "like" a good message.
+     \item As a User, I want to share an audio file.
+     \item As a User, I want to upload an audio-file.
+     \item As a User, I want to view a uploaded/shared video within a message.
+     \item As a User, I want to see uploaded/shared pictures within the message.
+     \item As a User, I want to share a video in a thread.
+     \item As a User, I want to upload a video to a message I'm writing.
+     \item As a User, I want to share a picture in a thread by using the Share Button from Android and be able to write some text to this.
+     \item As a User, I want to upload a picture to a message I'm writing.
+     \item As a User, I want to change a message I wrote.
+     \item As a User, I want to delete a message I wrote and nobody can read it anymore or reply to it. 
+     \item As a User, I want to add descriptions to my threads.
+     \item As a User, I want to open a new thread to talk with others about a specific topic.
+     \item As a User, I want to get a Notification on my mobile about a new message.
+     \item As a User, I want to reply to a message I'm reading.
+     \item As a User, I want to write a text message for a specific thread.
+     \item As a User, I want to read a message from a specific thread. 
+   \end{itemize}
 \section{Current state}
 
 \section{Next steps}
