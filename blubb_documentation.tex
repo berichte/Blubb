@@ -4,9 +4,37 @@
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage{cite}
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=Java,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true
+  tabsize=3
+}
+
+
 \titleformat{\chapter}
 	{\normalfont\Large\bfseries}{\thechapter.}{1em}{}
 \graphicspath{ {images/} }
+
+\newcommand{\code}[1]{\texttt{#1}}
 
 \newcommand{\appname}{ablubb}
 \newcommand{\blubb}{blubb}
@@ -108,14 +136,181 @@ project management \cite{mihaela2013measurement}.
 \chapter{Blubb android app}
 
 \section{Architecture overview}
+ Beap lightweight user bulletin board (\blubb{}) is an application to manage the communication within a project. A mobile front end improves the availability of the project members. They become mobile reachable with their smartphones. Unlike a mobile website a native app offers the possibility that the user can read messages even offline. Additionally it can use notifications to get the attention of users and improve their availability. \\
+In order to realize this task an android application has been implemented. This technical documentation describes the way  \appname{} is operating.\\
+\appname{} can be set apart in three main parts: 
 
-\section{Communication with Beap}
+\begin{itemize}
+\item{The Data storage,}
+\item{The View (Front end, user interface),}
+\item{The Managers or controllers.}
+\end{itemize}
 
-\section{Sqlite as a local database}
+The data storage itself consist of two nearly redundant databases. A \beapDB{} at a \beapServer{} is the central database for all user. It is the exchange server for all data. The second is a local SQLite database mirroring the data form the \beapDB{}. This is needed to provide the offline access and to add some user specific fields to the data sets, e.g. that a message has already been read.\\
+Within android activity classes implement the user interface. At the current state of the project there are four different activities:
 
-\section{Singleton classes}
+\begin{itemize}
+\item{ThreadsActivity}
+\item{MessagesActivity}
+\item{LoginActivity}
+\item{SettingsActivity}
+\end{itemize}
 
-\subsection{General matter}
+\begin{figure}[!ht]
+	\centering
+    \includegraphics[width=\linewidth]{ActivitiesOverview.png}
+	\caption{Activities navigation.}
+\end{figure}
+
+The main purpose of the ThreadsActivity is to show the list with available BlubbThreads but it is the center of the applications user interface, too.\\ A user can access all the other activities from there. Through a click on one list item he starts the MessageActivity. This shows a list of BlubbMessages that belong to the clicked thread. \\
+- user can access login and settings through the menu of threadsActivity
+- loginActivity is for reset pw too
+- Settings will be accessed through the menu of ThreadActivity, too.
+- From Login, Messages and Settings BackButton always goes to ActivityThreads.
+
+
+- User can input data: 
+
+at LoginActivity:
+- login
+- ResetPw
+- Initialize pw, throgh dialog called when pw is init password
+
+at ThreadsActivity:
+- create new thread (title and description)
+- set thread (title, description, status)
+
+at MessagesActivity:
+- create new message (text content, later other content types)
+- edit message(text content)
+- reply to message
+- jump to message replied to
+
+at settingsActivity
+- set frequency of the background pull service
+
+additionally a background service. Via alarm service of android.
+performs a quickCheck at beap and compares the number of threads and messages at beap and locally at the sqlite db. if new content available makes notification to inform user.
+
+link between views and data storage are three manager classes
+-sessionManager
+-ThreadManager
+-MessageManager
+
+
+sessionmanager holds sessioninfo - manages all matters with the session: performs login from loginActivity - makes auto login when username and password are at preferences - makes session refresh if necessary and provides the session id needed for all interactions with the beap server quickCheck 
+
+ThreadManager manages all matters with blubbthreads. get threads form beap server, get threads from the sqlitedb, compare both and add new from server as 'new' marked threads to sqlite, add a thread to both, edit thread at both, get new threads
+
+MessageManager similar to ThreadManager. get messages for thread from beap, from sqlite, compare both lists and mark new as 'new' 
+
+
+
+\section{Data storage}
+
+\subsection{beapDB at the beap server}
+
+\subsection{SQLite as a local database}
+
+For android there are different storage options:
+(http://developer.android.com/guide/topics/data/data-storage.html)
+- shared Preferences -> key value pairs
+- internal storage -> private data for app e.g in xml
+- external storage -> public data on shared external storage
+- SQLite databases -> Store structured data in a private database
+- network connection -> Store data with own network server.
+
+For blubb used shared preferences for username, password, settings of pull service, for quickcheck the number of threads and messages at beapdb to compare them and request if new are available.
+
+BlubbThreads and BlubbMessages are stored with a SQLite database. 
+Class accessing the database is the DatabaseHandler.
+it implements the SQLiteOpenHelper, which manages database creation and version management (http://developer.android.com/reference/android/database/sqlite/SQLiteOpenHelper.html)
+
+The version number is a constant within the class and must be increased if any changes are made at the database, e.g. adding a new field to a table - if not database will probably crash.
+the names for the database, tables and column names are set with constants too. They should be accessed only through these constants to avoid typos. 
+
+Database consists of two tables - threads and messages
+they are created in onCreate(), it's called the first time the database is created. The primary key for the threads are the thread id, for the messages the message id, since they are already unique from the beapDB. The tables are connected via the thread id which is given for every message.
+
+plain sqlstatement for the creation or threads and messages:
+\lstset{language=SQL}
+\begin{lstlisting}
+CREATE TABLE messages(
+	mId TEXT PRIMARY KEY,
+	mTitle TEXT,
+	mContent TEXT,
+	mRole TEXT,
+	mCreator TEXT,
+	mDate TEXT,
+	mType TEXT,
+	mThreadId TEXT,
+	mLink TEXT,
+	mIsNew INTEGER)
+\end{lstlisting}
+\begin{lstlisting}
+CREATE TABLE threads (
+	tId TEXT PRIMARY KEY,
+	tTitle TEXT,
+	tDesc TEXT,
+	tCreator TEXT,
+	tCreatorRole TEXT,
+	tStatus TEXT,
+	tDate TEXT, 
+	tMsgCount INTEGER,
+	tType TEXT,
+	tIsNew INTEGER,
+	tHasNewMsg INTEGER)
+\end{lstlisting}
+\lstset{language=Java}
+
+The databaseHandler offers some methods to access the database:
+
+\begin{itemize}
+\item{\lstinline{public void addMessage(BlubbMessage message)} 
+\\Adds a message to the database.}
+\item{\lstinline{public void addThread(BlubbThread thread)}
+\\Adds a thread to the database.}
+\item{\lstinline{public BlubbMessage getMessage(String mId)}
+\\Gets a message with the provided message id.}
+\item{\lstinline{public BlubbThread getThread(String tId)}
+\\Gets a thread from the database.}
+\item{\lstinline{public List<BlubbMessage> getAllMessages()}
+\\Gets all messages stored in the database. (not used yet)}
+\item{\lstinline{public List<BlubbMessage> getMessagesForThread(String tId)}
+\\Gets all messages for a thread.}
+\item{\lstinline{public List<BlubbThread> getAllThreads()}
+\\Gets all threads stored in the database.}
+\item{\lstinline{public void setMessageRead(String mId)}
+\\Sets the read flag of a message to true.}
+\item{\lstinline{public void setThreadNewMsgs(String tId, boolean hasNewMsgs)}
+\\Sets the 'hasNewMsgs' flag of a thread.}
+\item{\lstinline{public void updateMessage(BlubbMessage message) }
+\\Updates the values of a stored message, e.g. when the content has changed.}
+\item{\lstinline{public void updateMessageFromBeap(BlubbMessage message)}
+\\This updates without the isNew flag because this can not be modified at the beapDB.}
+\item{\lstinline{public void updateThread(BlubbThread thread)}
+\\Update the values of a stored BlubbThread, e.g. when the description has been changed.}
+\item{\lstinline{public void updateThreadFromBeap(BlubbThread thread)}
+\\This updates a thread without changing the 'isNew' or 'hasNewMsgs'.}
+\item{\lstinline{public int getMessageCount()}
+\\Gets the number of messages stored in the database.}
+\item{\lstinline{public int getThreadCount()}
+\\Gets the number of threads stored in the database.}
+\end{itemize}
+
+The database can easily be accessed from any class of the project. Just instantiate an instance and call the desired method like in example. In order to make an instance the applications context must be provided, due to that the SQLite database is only accessible for the application which created it.
+\begin{lstlisting}
+	...
+	BlubbMessage message = new BlubbMessage(result);
+	DatabaseHandler db = new DatabaseHandler(context);
+	db.addMessage(message);
+	...
+\end{lstlisting}
+
+
+\section{Manager}
+
+\subsection{Singleton pattern}
 
 \subsection{SessionManager}
 
@@ -123,19 +318,15 @@ project management \cite{mihaela2013measurement}.
 
 \subsection{MessageManager}
 
-\section{User interface}
+\section{View or Front end}
 
-\subsection{Design}
+\subsection{ActivityThreads}
 
-\subsection{Activities}
+\subsection{ActivityMessages}
 
-\subsection{AsyncTasks}
+\subsection{ActivityLogin}
 
-\section{Notifications}
-
-\subsection{Motivation}
-
-\subsection{Service}
+\subsection{Notifications}
 
 \section{Manifest}
 
@@ -185,5 +376,7 @@ project management \cite{mihaela2013measurement}.
 
 
 The second Section.\\
+
+\bibliography{thesisBib}
 
 \end{document}
