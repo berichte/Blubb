@@ -3,7 +3,15 @@
 \usepackage{graphicx, titlesec}
 \usepackage{hyperref}
 \usepackage{url}
-\usepackage{cite}
+%\usepackage{cite}
+%\usepackage{natbib}
+\usepackage[autostyle]{csquotes}
+
+\usepackage[
+	backend=biber,
+	style=ieee,
+	natbib=true]{biblatex}
+\addbibresource{thesisBib.bib}
 
 \usepackage{listings}
 \usepackage{color}
@@ -43,7 +51,7 @@
 
 \begin{document}
 
-\bibliographystyle{ieeetr}
+%\bibliographystyle{ieeetr}
 %\citep{}, \citet{}, \citep*{}
 \title{
 	{\huge \appname{} documentation}
@@ -60,7 +68,7 @@
 
 \section{Project management and communication}
 %comment
-project management \cite{mihaela2013measurement}. 
+project management \citep{mihaela2013measurement}. 
 
 
 \section{General goals}
@@ -224,7 +232,7 @@ For blubb used shared preferences for username, password, settings of pull servi
 
 BlubbThreads and BlubbMessages are stored with a SQLite database. 
 Class accessing the database is the DatabaseHandler.
-it implements the SQLiteOpenHelper, which manages database creation and version management (http://developer.android.com/reference/android/database/sqlite/SQLiteOpenHelper.html)
+it implements the SQLiteOpenHelper, which manages database creation and version management \citep{aDefSQLiteOpenHelper}
 
 The version number is a constant within the class and must be increased if any changes are made at the database, e.g. adding a new field to a table - if not database will probably crash.
 the names for the database, tables and column names are set with constants too. They should be accessed only through these constants to avoid typos. 
@@ -377,6 +385,7 @@ The database can easily be accessed from any class of the project. Just instanti
 
 The second Section.\\
 
-\bibliography{thesisBib}
+\printbibliography
+%\bibliography{thesisBib}
 
 \end{document}
