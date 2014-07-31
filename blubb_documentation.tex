@@ -19,6 +19,24 @@
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
+\definecolor{lightgray}{rgb}{.9,.9,.9}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
+
+\lstdefinelanguage{JavaScript}{
+  keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={class, export, boolean, throw, implements, import, this},
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{blue}\ttfamily,
+  stringstyle=\color{mauve}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
 
 \lstset{frame=tb,
   language=Java,
@@ -33,8 +51,9 @@
   commentstyle=\color{dkgreen},
   stringstyle=\color{mauve},
   breaklines=true,
-  breakatwhitespace=true
-  tabsize=3
+  breakatwhitespace=true,
+  tabsize=3,
+  escapeinside=`` 
 }
 
 
@@ -52,7 +71,7 @@
 \begin{document}
 
 %\bibliographystyle{ieeetr}
-%\citep{}, \citet{}, \citep*{}
+%\citep[pp. 10-12]{}, \citet{}, \citep*{}
 \title{
 	{\huge \appname{} documentation}
 	{\\ \large Hochschule Heilbronn}
@@ -201,10 +220,11 @@ additionally a background service. Via alarm service of android.
 performs a quickCheck at beap and compares the number of threads and messages at beap and locally at the sqlite db. if new content available makes notification to inform user.
 
 link between views and data storage are three manager classes
--sessionManager
--ThreadManager
--MessageManager
-
+\begin{itemize}
+\item{SessionManager}
+\item{ThreadManager}
+\item{MessageManager}
+\end{itemize}
 
 sessionmanager holds sessioninfo - manages all matters with the session: performs login from loginActivity - makes auto login when username and password are at preferences - makes session refresh if necessary and provides the session id needed for all interactions with the beap server quickCheck 
 
@@ -218,15 +238,121 @@ MessageManager similar to ThreadManager. get messages for thread from beap, from
 
 \subsection{beapDB at the beap server}
 
+\subsubsection{Communication with the beap server}
+Communication to the beap server via html requests 
+in manifest request permission for network - all actions demanding network work need to be in a separate thread not on user thread, see AsyncTasks.
+general scheme
+	- build a request string with RequestBuilder
+	- execute the html request with htmlRequest
+	- receive the response string and build a BlubbResopnse object
+	- pass this object to the calling method
+	- extract the result object within the BlubbResponse according to what requested, e.g. tree.functions.getAllThreads(self) build the BlubbThreads from the jsonArray that is the result.
+	
+\subsubsection{Building request strings}
+two different kinds of request strings, one for the beap server (all about the session) the other are queries at the beapDB, therefor they have different beapids..
+A request string for session contains following parts:
+ 	- the url: http://blubb.traumtgerade.de:9980/
+ 	- question mark for request: ?
+ 	- BeapId: BeapSession 
+ 	- Action: login, refresh, logout, check or setOwnPwd 
+ 	- beap app version: at login
+ 	- parameter: for session
+ 		- login: uName, uPwd
+ 		- check: BeapSession
+ 		- refresh: BeapSession
+ 		- logout: BeapSession
+ 		- resetOwnPwd: uName, uPwd, newPwd1, newPwd2
+A request string for a login would look like this:
+\url{http://blubb.traeumtgerade.de:9980/?BeapId=BeapSession&Action=login&appVers=1.5.0 rc1&uName=Der-Praktikant&uPwd=test}
+request for beapdb is different:
+	- url:
+	- question mark:
+	- BeapId: beapDB
+	- sessionId:
+	- action: query
+	- queryStr: tree.functions.getAllThreads(self)
+
+
+ \subsubsection{Parsing parameter}
+every parameter send to the beapDB like username, password, a text content of a message etc. need to be encoded to UTF-8.
+BPC (Blubb Parameter Checker) uses a URLEncoder to encode the parameter to utf-8. 
+Additionally escape character must be escaped like:
+	- newline "\textbackslash n" to "\textbackslash \textbackslash n"
+	- tab "\textbackslash t" to "\textbackslash \textbackslash t"
+	- "\textbackslash \textbackslash \textbackslash ""
+When all newline, tabs and " are escaped the whole string is packed within two " and then encoded to utf-8.
+Lets try a simple example. A user types a message like:
+\begin{lstlisting}
+We need to encode character like:
+	"`\textcolor{mauve}{ü}`"
+\end{lstlisting}
+First the newlines, tabs and quotation marks must be escapted. The resulting string would look like this:
+\begin{lstlisting}
+"We need to encode character like:\n\t\"`\textcolor{mauve}{ü}`\""
+\end{lstlisting}
+After this the string is encoded in utf-8 and will be send to the server like:
+\begin{lstlisting}
+"We%20need%20to%20encode%20character%20like%3A%5Cn%5Ct%5C%22%C3%BC%5C%22"
+\end{lstlisting}
+The parameter send to the Request manager for all session request are parsed automatically. Parameter entered in a database query must be parsed with BPC by calling the static method parseStringParameterToDB, just like in the following example.
+\begin{lstlisting}
+	...
+	String result = BPC.parseStringParameterToDB("\n`\textcolor{mauve}{ü}`bercool");
+	...
+\end{lstlisting}
+
+\subsubsection{Response from beap}
+The response from beap will always be a json object with the following structure: 
+\lstset{language=JavaScript}
+\begin{lstlisting}
+{
+		BeapStatus : <int>, 	/*Response status, e.g. 200 for OK.*/
+		StatusDescr : <string>, /*A description for the status.*/
+		Result : <var>,         /*If available a json object a result. */
+		sessInfo : {			/*Info object about the session. */
+			sessId : <MD5-string>,
+			sessUser : <string>,
+			sessRole: <string>,
+			sessActive : <bool>,
+			expires: <GMT-Date>  
+		}
+	}
+\end{lstlisting}
+\lstset{language=java}
+BeapStatus and StatusDescr describe the status of a request at beap. The following are the most common statuses:
+\begin{itemize}
+\item{200 - OK}
+\\The request could be processed properly and will contain the expected result.
+\item{203 - No content}
+\\The request could also be processed properly but there is no result.
+\item{204 - session already deleted}
+\\The sessionId is not valid any more.
+\item{400 - request failure}
+\\A response will have this status mostly if parameter are missing.
+\item{401 - login required}
+\\If a login is required before sending this request.
+\item{403 - permission denied}
+\\This status will be send if a user has not the permission to request a certain action at the beapDB.
+\item{407 - connection error}
+\\If there is no network connection or the server is offline the response object will have this status.
+\item{406 and 409 - parameter error}
+\\In the request was something wrong with a parameter, e.g. a string has not been encoded properly.
+\item{418 - syntax or reference error}
+\\The status for a error within a query string.
+\end{itemize}
+The result object will vary due to the request. Integer, json object or json array are the possible types of the result. 
+
 \subsection{SQLite as a local database}
 
-For android there are different storage options:
-(http://developer.android.com/guide/topics/data/data-storage.html)
-- shared Preferences -> key value pairs
-- internal storage -> private data for app e.g in xml
-- external storage -> public data on shared external storage
-- SQLite databases -> Store structured data in a private database
-- network connection -> Store data with own network server.
+For android there are different storage options\citep{aDefStorageOpt}:
+\begin{itemize}
+\item{shared Preferences \\key value pairs}
+\item{internal storage \\private data for app e.g in xml}
+\item{external storage \\public data on shared external storage}
+\item{SQLite databases \\Store structured data in a private database}
+\item{network connection \\Store data with own network server.}
+\end{itemize}
+ 
 
 For blubb used shared preferences for username, password, settings of pull service, for quickcheck the number of threads and messages at beapdb to compare them and request if new are available.
 
@@ -239,6 +365,14 @@ the names for the database, tables and column names are set with constants too. 
 
 Database consists of two tables - threads and messages
 they are created in onCreate(), it's called the first time the database is created. The primary key for the threads are the thread id, for the messages the message id, since they are already unique from the beapDB. The tables are connected via the thread id which is given for every message.
+The tables are nearly the same as at beap but have columns for the boolean values isNew in messages, isNew and hasNewMsg in threads. The boolean values are stored as ints and must be parsed. <1 equals true and 0 equals false. 
+
+\begin{figure}[!ht]
+	\centering
+    \includegraphics[width=\linewidth]{BlubbERM.png}
+	\caption{ERM of the SQLite database.}
+\end{figure}
+
 
 plain sqlstatement for the creation or threads and messages:
 \lstset{language=SQL}
@@ -319,6 +453,30 @@ The database can easily be accessed from any class of the project. Just instanti
 \section{Manager}
 
 \subsection{Singleton pattern}
+used the singleton pattern for all manager classes to provide global access to them. it's realized by making the constructor of the classes private and create a static instance. 
+\citep[p. 39]{cooper2000java}
+- one problem with android. singletons must be created within a context that's every time available.
+- Therefor the e.g. MessageManager.getInstance() must be called within the application class one time. 
+- android does not allow singltons to be instantiated other ways 
+- Extended the application class with BlubbApplication
+- the application can be accessed in activities an services via .getApplicaiton() and parsing the result to a BlubbApplication
+in the android manifest file need a entry for the used application class see example:
+
+\lstset{language=xml}
+\begin{lstlisting}
+...
+<application
+        android:name=".blubbbasics.BlubbApplication"
+        android:allowBackup="true"
+        android:icon="@drawable/blubb_logo"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme">
+        ...
+\end{lstlisting}
+\lstset{language=java}
+pay attention when making subclasses of singletons
+\\subclassing a singleton can be difficult, since this can work only if the base Singleton class has not been instantiated. \citep[p. 46]{cooper2000java} 
+
 
 \subsection{SessionManager}
 
@@ -382,10 +540,310 @@ The database can easily be accessed from any class of the project. Just instanti
 
 \chapter{Prospect blubb}
 
-
-The second Section.\\
-
 \printbibliography
 %\bibliography{thesisBib}
+
+\appendix
+\chapter{Requests and responses from beap}
+\lstset{language=JavaScript}
+\section{Session requests}
+To try an url please change parameter to valid values, e.g. the username and the password or the session id.
+\subsection{Login}
+BeapId=BeapSession\\
+Action=login\\
+appVers=1.5.0 rc1\\
+uName="username"\\
+uPwd="password"\\
+\url{http://blubb.traeumtgerade.de:9980/?BeapId=BeapSession&Action=login&appVers=1.5.0 rc1&uName=Der-Praktikant&uPwd=xxxx}
+\lstset{language=JavaScript}
+\begin{lstlisting}
+{ /* ReturnOkObj */
+    "BeapStatus" : 200,
+    "StatusDescr" : "OK",
+    "sessInfo" : { 
+        "sessId" : "5a379bd91cc16ca1dc01198f54fbb55d",
+        "sessUser" : "Der-Praktikant",
+        "sessRole" : "user",
+        "sessActive" : true,
+        "expires" : "2014-07-31T22:28:54.000+0200"
+    }
+}
+\end{lstlisting}
+\clearpage
+\subsection{Check session}
+BeapId=BeapSession\\
+Action=check\\
+sessId="session id"
+\url{http://blubb.traeumtgerade.de:9980/?BeapId=BeapSession&Action=check&sessId=5a379bd91cc16ca1dc01198f54fbb55d}
+\lstset{language=JavaScript}
+\begin{lstlisting}
+{ /* ReturnOkObj */
+    "BeapStatus" : 200,
+    "StatusDescr" : "OK",
+    "Result" : 6,
+    "sessInfo" : { 
+        "sessId" : "5a379bd91cc16ca1dc01198f54fbb55d",
+        "sessUser" : "Der-Praktikant",
+        "sessRole" : "user",
+        "sessActive" : true,
+        "expires" : "2014-07-31T22:32:21.000+0200"
+    }
+}
+\end{lstlisting}
+
+\subsection{Session refresh}
+
+BeapId=BeapSession\\
+Action=refresh\\
+sessId="session id"
+\url{http://blubb.traeumtgerade.de:9980/?BeapId=BeapSession&Action=refresh&sessId=5a379bd91cc16ca1dc01198f54fbb55d}
+\lstset{language=JavaScript}
+\begin{lstlisting}
+{ /* ReturnOkObj */
+    "BeapStatus" : 200,
+    "StatusDescr" : "OK",
+    "Result" : 5,
+    "sessInfo" : { 
+        "sessId" : "5a379bd91cc16ca1dc01198f54fbb55d",
+        "sessUser" : "Der-Praktikant",
+        "sessRole" : "user",
+        "sessActive" : true,
+        "expires" : "2014-07-31T22:32:21.000+0200"
+    }
+}
+\end{lstlisting}
+
+\subsection{Logout}
+
+BeapId=BeapSession\\
+Action=logout\\
+sessId="session id"
+\url{http://blubb.traeumtgerade.de:9980/?BeapId=BeapSession&Action=logout&sessId=5a379bd91cc16ca1dc01198f54fbb55d}
+\lstset{language=JavaScript}
+\begin{lstlisting}
+{ /* ReturnOkObj */
+    "BeapStatus" : 200,
+    "StatusDescr" : "OK",
+    "sessInfo" : { 
+        "sessId" : "",
+        "sessUser" : "",
+        "sessRole" : "",
+        "sessActive" : false,
+        "expires" : { 
+
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{Reset Password}
+
+BeapId=BeapSession\\
+Action=setOwnPwd\\
+uName="username"\\
+uPwd="password"\\
+newPwd1="new password"\\
+newPwd2="new password again"\\
+\url{http://blubb.traeumtgerade.de:9980/?BeapId=BeapSession&Action=setOwnPwd&uName="Der-Praktikant"&uPwd="xxxx"&newPwd1="xxxx"&newPwd2="xxxx"}
+\lstset{language=JavaScript}
+\begin{lstlisting}
+{ /* ReturnOkObj */
+    "BeapStatus" : 200,
+    "StatusDescr" : "OK"
+}
+\end{lstlisting}
+
+\section{Database requests}
+\subsection{General request}
+The queries to the beapDB have all the same request structure but different query strings and result objects. The following sections will focus on these queries and their results.
+\\
+BeapId=BeapDB\\
+sessId="session id"\\
+Action=query\\
+queryStr="the query string"
+\url{http://blubb.traeumtgerade.de:9980/?BeapId=BeapDB&sessId=5a379bd91cc16ca1dc01198f54fbb55d&Action=query&queryStr=tree.functions.getAllThreads(self)}
+
+\begin{lstlisting}
+{ /* ReturnOkObj */
+    "BeapStatus" : 200,
+    "StatusDescr" : "OK",
+    "Result" : [  
+        { 
+            "tId" : "t2014-06-18_115628_S-Gross",
+            "tType" : "Thread",
+            "tCreator" : "S-Gross",
+            "tCreatorRole" : "admin",
+            "tPath" : [  
+                "Thread"
+            ],
+            "tDate" : "2014-06-18T11:56:28.313Z",
+            "tTitle" : "Off-Topic-Ge[Blubb]er",
+            "tDescr" : "einfach nur zum blubbern.",
+            "tStatus" : "open",
+            "tMsgCount" : 1
+        },
+        ...
+    ],
+    "sessInfo" : { 
+        "sessId" : "5a379bd91cc16ca1dc01198f54fbb55d",
+        "sessUser" : "Der-Praktikant",
+        "sessRole" : "user",
+        "sessActive" : true,
+        "expires" : "2014-07-31T23:00:25.000+0200"
+    }
+}
+\end{lstlisting}
+
+\subsection{Get all threads}
+Query=tree.functions.getAllThreads(self)\\
+The result is an array of threads.
+\begin{lstlisting}
+    "Result" : [  
+        { 
+            "tId" : "t2014-06-18_115628_S-Gross",
+            "tType" : "Thread",
+            "tCreator" : "S-Gross",
+            "tCreatorRole" : "admin",
+            "tPath" : [  
+                "Thread"
+            ],
+            "tDate" : "2014-06-18T11:56:28.313Z",
+            "tTitle" : "Off-Topic-Ge[Blubb]er",
+            "tDescr" : "einfach nur zum blubbern.",
+            "tStatus" : "open",
+            "tMsgCount" : 1
+        },
+        { 
+            "tId" : "t2014-06-20_145439_S-Gross",
+            "tType" : "Thread",
+            "tCreator" : "S-Gross",
+            "tCreatorRole" : "admin",
+            "tPath" : [  
+                "Thread"
+            ],
+            "tStatus" : "solved",
+            "tDate" : "2014-06-20T14:54:39.775Z",
+            "tTitle" : "Bug: Login-Screen",
+            "tDescr" : "...",
+            "tMsgCount" : 2
+        },
+        ...
+        
+    ]
+\end{lstlisting}
+\clearpage
+\subsection{Create a thread}
+tree.functions.createThread(self,"tTitle","tDescription")\\
+The result is the created thread.
+\begin{lstlisting}
+    "Result" : 
+    	{ 
+            "tId" : "t2014-06-18_115628_S-Gross",
+            "tType" : "Thread",
+            "tCreator" : "S-Gross",
+            "tCreatorRole" : "admin",
+            "tPath" : [  
+                "Thread"
+            ],
+            "tDate" : "2014-06-18T11:56:28.313Z",
+            "tTitle" : "Off-Topic-Ge[Blubb]er",
+            "tDescr" : "einfach nur zum blubbern.",
+            "tStatus" : "open",
+            "tMsgCount" : 1
+        }
+\end{lstlisting}
+
+\subsection{Modify a thread}
+Query=tree.functions.setThread( self,"tId","tTitle","tDescription","tStatus")
+\\The result is the modified thread.
+\begin{lstlisting}
+    "Result" : 
+    	{ 
+            "tId" : "t2014-06-18_115628_S-Gross",
+            "tType" : "Thread",
+            "tCreator" : "S-Gross",
+            "tCreatorRole" : "admin",
+            "tPath" : [  
+                "Thread"
+            ],
+            "tDate" : "2014-06-18T11:56:28.313Z",
+            "tTitle" : "Off-Topic-Ge[Blubb]er",
+            "tDescr" : "einfach nur zum blubbern.",
+            "tStatus" : "open",
+            "tMsgCount" : 1
+        }
+\end{lstlisting}
+
+\subsection{Quick check}
+Query=tree.functions.quickCheck(self)\\
+The result will be a simple array of integer. The first integer represents the number of threads at the database and the second the number of messages.
+
+\begin{lstlisting}
+   "Result" : [  
+        17,
+        102
+    ]
+\end{lstlisting}
+
+\subsection{Get messages for a thread}
+Query=tree.functions.getMsgsForThread(self,"tId")\\
+The result will be an array of messages.
+\begin{lstlisting}
+   "Result" : [  
+        { 
+            "mId" : "m2014-06-18_122643_S-Gross",
+            "mType" : "Message",
+            "mCreator" : "S-Gross",
+            "mCreatorRole" : "admin",
+            "mDate" : "2014-06-18T12:26:43.422Z",
+            "mThread" : [  
+                "t2014-06-18_115628_S-Gross"
+            ],
+            "mTitle" : "  ",
+            "mContent" : "Bitte Alle ToDo-Threads mit ..."
+        },
+        ...
+    ]
+\end{lstlisting}
+
+\subsection{Create a message}
+Query=tree.functions.createMsg(self,"tId","mTitle","mContent","mLink")\\
+The result is the created message.
+\begin{lstlisting}
+   "Result" :   
+        { 
+            "mId" : "m2014-06-18_122643_S-Gross",
+            "mType" : "Message",
+            "mCreator" : "S-Gross",
+            "mCreatorRole" : "admin",
+            "mDate" : "2014-06-18T12:26:43.422Z",
+            "mThread" : [  
+                "t2014-06-18_115628_S-Gross"
+            ],
+            "mTitle" : "  ",
+            "mContent" : "Bitte Alle ToDo-Threads mit ..."
+        }
+\end{lstlisting}
+
+\subsection{Modify a message}
+Query=tree.functions.setMsg(self,"mId","mTitle","mContent","mLink")\\
+The result is the modified message.
+\begin{lstlisting}
+   "Result" :   
+        { 
+            "mId" : "m2014-06-18_122643_S-Gross",
+            "mType" : "Message",
+            "mCreator" : "S-Gross",
+            "mCreatorRole" : "admin",
+            "mDate" : "2014-06-18T12:26:43.422Z",
+            "mThread" : [  
+                "t2014-06-18_115628_S-Gross"
+            ],
+            "mTitle" : "  ",
+            "mContent" : "Bitte Alle ToDo-Threads mit ..."
+        }
+\end{lstlisting}
+
+
 
 \end{document}
