@@ -61,15 +61,17 @@
 	{\normalfont\Large\bfseries}{\thechapter.}{1em}{}
 \graphicspath{ {images/} }
 
-\newcommand{\code}[1]{\texttt{#1}}
 
 \newcommand{\appname}{ablubb}
 \newcommand{\blubb}{blubb}
 \newcommand{\beapDB}{beapDB}
 \newcommand{\beapServer}{beap server}
 
-\begin{document}
+\newcommand{\code}[1]{\lstinline{#1}}
 
+\begin{document}
+\begin{lstlisting}
+\end{lstlisting}
 %\bibliographystyle{ieeetr}
 %\citep[pp. 10-12]{}, \citet{}, \citep*{}
 \title{
@@ -239,7 +241,7 @@ MessageManager similar to ThreadManager. get messages for thread from beap, from
 \subsection{beapDB at the beap server}
 
 \subsubsection{Communication with the beap server}
-Communication to the beap server via html requests 
+Communication to the beap server via http requests 
 in manifest request permission for network - all actions demanding network work need to be in a separate thread not on user thread, see AsyncTasks.
 general scheme
 	- build a request string with RequestBuilder
@@ -271,6 +273,17 @@ request for beapdb is different:
 	- sessionId:
 	- action: query
 	- queryStr: tree.functions.getAllThreads(self)
+parameter for the query in the braces, first parameter is a reference to the session object. for this application it's always the own session, so it's always self.
+Following a list of custom queries/functions available prefix always "tree.functions.:
+\begin{itemize}
+\item{\code{getAllThreads(self)}}
+\item{\code{createThread(self,"Thread title","Thread description")}}
+\item{\code{setThread(self,"Thread id","Thread title"[opt.],"Thread description"[opt.],"Thread status"[opt.])}}
+\item{\code{getMsgsForThread(self,"Thread id")}}
+\item{\code{createMsg(self,"Thread id","Message title"[opt.],MessageContent,"Message link"[opt.])}}
+\item{\code{setMsg(self,"Message id","Message title"[opt.],"Message content"[opt.],"Message link"[opt.])}}
+\item{\code{quickCheck(self)}}
+\end{itemize}
 
 
  \subsubsection{Parsing parameter}
@@ -306,10 +319,10 @@ The response from beap will always be a json object with the following structure
 \lstset{language=JavaScript}
 \begin{lstlisting}
 {
-		BeapStatus : <int>, 	/*Response status, e.g. 200 for OK.*/
-		StatusDescr : <string>, /*A description for the status.*/
-		Result : <var>,         /*If available a json object a result. */
-		sessInfo : {			/*Info object about the session. */
+		BeapStatus : <int>, 	/* Response status, e.g. 200 for OK.*/
+		StatusDescr : <string>, /* A description for the status.*/
+		Result : <var>,         /* If available a json object a result.*/
+		sessInfo : {			/* Info object about the session.*/
 			sessId : <MD5-string>,
 			sessUser : <string>,
 			sessRole: <string>,
@@ -341,6 +354,7 @@ BeapStatus and StatusDescr describe the status of a request at beap. The followi
 \\The status for a error within a query string.
 \end{itemize}
 The result object will vary due to the request. Integer, json object or json array are the possible types of the result. 
+For details see appendix A.
 
 \subsection{SQLite as a local database}
 
@@ -479,10 +493,95 @@ pay attention when making subclasses of singletons
 
 
 \subsection{SessionManager}
+All queries at the beapDB need a valid session Id to authenticate the users identity and check weather the user has the permission to perform a certain query. after a login the beap server returns a response object. One part of this object is a SessionInfo object. The SessionManager holds this SessionInfo to provide access to it and the session Id within it.
+if the user has saved the credentials the login will be performed automatically, if not a SessionException will be thrown and the user should be asked to log in. The username and password will be stored temporarily so the user must not be bothered again while the app is running. 
+If the password is "init" the response status will be passwordInit, which means the user must set an own password and should be asked to do so. \\
+
+The session manager also provides a method to do a quickCheck at the beapDB and see whether there are any new threads or messages available. Beap will return a result array with just to integer. The first is the number of threads, the second the number of messages at the beapDB. If there are new threads or messages quickCheck will request them and return a QuickCheck object containing two lists with the new threads and messages.
+Furthermore the logout and password reset can be done through the SessionManager.
+Following a complete list of methods provided by the SessionManager:
+
+\begin{itemize}
+\item{\code{public synchronized String getSessionID(Context context)}}\\
+Get the session ID. If necessary and possible this will perform a auto login or session refresh.
+
+\item{\code{public synchronized boolean login(String username, String password)}}\\
+Make a manual login. After this the session Id will be available and the session will be refreshed automatically.
+
+\item{\code{public synchronized QuickCheck quickCheck(Context context)}}\\
+Make a quickCheck at beap and see whether new threads or messages available. If so the new ones will be available at the QuickCheck object like: \begin{lstlisting}
+QuickCheck quickCheck = sessionManager.quickCheck(context);
+List<BlubbThread> threads = quickCheck.threads;
+List<BlubbMessage> messages = quickCheck.messages;
+\end{lstlisting}
+
+\item{\code{public synchronized boolean resetPassword(String username, String oldPassword, String newPassword, String confirmNewPassword)}}\\
+Performs a tree.functions.resetPwd(...) at beap and will return true if successful.
+
+\item{\code{public synchronized String getUserId(Context context)}}\\
+Returns a string with the current users username.
+
+\item{\code{public synchronized void logout(Context context)}}\\
+Logs the user out of the beap server, the session will not be active any more and a formerly, at the shared preferences saved password will be deleted. After this the user needs to log in manually.
+
+
+\end{itemize}
 
 \subsection{ThreadManager}
+The Thread manager manages the access to all available threads. When it requests the threads from the beapDB it updates the SQLite database immediately. 
+
+\begin{itemize}
+\item{\code{public synchronized List<BlubbThread> getAllThreads(Context context)}}\\
+Gets first the threads from beapDB and updates the SQLite database then from SQLite.
+
+\item{\code{public synchronized List<BlubbThread> getNewThreads(Context context)}}\\
+Get all threads with the isNew tag set to true.
+ 
+\item{\code{public synchronized Boolean updateAllThreadsFromBeap(Context context)}}\\
+Update all threads at the SQLite database from the beapDB. Load them from SQLite.
+
+\item{\code{public synchronized List<BlubbThread> getAllThreadsFromSqlite(Context context)}}\\
+Get all the threads stored on the local SQLite database.
+
+\item{\code{public synchronized BlubbThread getThreadFromSqlite(Context context, String tId)}}\\
+Get a single thread from SQLite database.
+
+\item{\code{public synchronized BlubbThread createThread(Context context, String tTitle, String tDescription)}}\\
+Creates a new Thread at beap. If everything goes well the thread will be added to the sqlite db and the whole new BlubbThread object will be returned.
+
+\item{\code{public synchronized void readingThread(Context context, String threadId)}}\\
+Call this if a thread is shown on the user interface and the thread is not longer a new one.
+
+\item{\code{public synchronized Boolean setThread(Context context, BlubbThread thread)}}\\
+Updates the thread at beapDB and the sqlite database.
+
+\end{itemize}
+
 
 \subsection{MessageManager}
+Like the ThreadManager the MessageManager manages all concerns about the messages. It is the link between the data storage, local and at the beap server and the user interface. Through the following methods it can provide this service.
+\begin{itemize}
+\item{\code{public synchronized List<BlubbMessage> getNewMessagesFromAllThreads(Context context)}}\\
+Get all messages from all threads where isNew is true. The message count of all local and all threads on beapDB are compared, when there is a difference on a thread getNewMsgsForThread(..) will be called and all new messages for a thread added to the returning list.
+
+\item{\code{public synchronized Boolean createMsg(Context context, String... messageParameter)}}\\
+ Creates a new message on the beapDB, on a positive response the message will be added to the SQLite database.
+     
+\item{\code{public synchronized List<BlubbMessage> getAllMessagesForThread(Context context, String tId)}}\\
+Get all messages for a thread.
+
+\item{\code{public synchronized List<BlubbMessage> getAllMessagesForThreadFromBeap(Context context, String tId)}}\\
+Get all messages for a thread from beapDB.
+
+\item{\code{public synchronized void putMessageToSqliteFromBeap(Context context, BlubbMessage message)}}\\
+ Put a message to the SQLite database. If the db contains a message with the same id it will be updated otherwise it will be added.
+     
+\item{\code{public synchronized List<BlubbMessage> getAllMessagesForThreadFromSqlite(Context context, String tId)}}\\
+Get all messages for a thread, stored in the local SQLite database.
+
+\item{\code{public synchronized Boolean setMsg(Context context, BlubbMessage message)}}\\
+Changes a message at beapDB and the local SQLite database.
+\end{itemize}
 
 \section{View or Front end}
 
@@ -503,7 +602,7 @@ pay attention when making subclasses of singletons
 \section{Thread overview}
 
 \subsection{Show Threads}
-
+blubb
 \subsection{Thread details}
 
 \subsection{Create a new thread}
@@ -548,7 +647,7 @@ pay attention when making subclasses of singletons
 \lstset{language=JavaScript}
 \section{Session requests}
 To try an url please change parameter to valid values, e.g. the username and the password or the session id.
-\subsection{Login}
+\subsubsection{Login}
 BeapId=BeapSession\\
 Action=login\\
 appVers=1.5.0 rc1\\
@@ -570,7 +669,7 @@ uPwd="password"\\
 }
 \end{lstlisting}
 \clearpage
-\subsection{Check session}
+\subsubsection{Check session}
 BeapId=BeapSession\\
 Action=check\\
 sessId="session id"
@@ -591,7 +690,7 @@ sessId="session id"
 }
 \end{lstlisting}
 
-\subsection{Session refresh}
+\subsubsection{Session refresh}
 
 BeapId=BeapSession\\
 Action=refresh\\
@@ -613,7 +712,7 @@ sessId="session id"
 }
 \end{lstlisting}
 
-\subsection{Logout}
+\subsubsection{Logout}
 
 BeapId=BeapSession\\
 Action=logout\\
@@ -636,7 +735,7 @@ sessId="session id"
 }
 \end{lstlisting}
 
-\subsection{Reset Password}
+\subsubsection{Reset Password}
 
 BeapId=BeapSession\\
 Action=setOwnPwd\\
@@ -654,7 +753,7 @@ newPwd2="new password again"\\
 \end{lstlisting}
 
 \section{Database requests}
-\subsection{General request}
+\subsubsection{General request}
 The queries to the beapDB have all the same request structure but different query strings and result objects. The following sections will focus on these queries and their results.
 \\
 BeapId=BeapDB\\
@@ -694,7 +793,7 @@ queryStr="the query string"
 }
 \end{lstlisting}
 
-\subsection{Get all threads}
+\subsubsection{Get all threads}
 Query=tree.functions.getAllThreads(self)\\
 The result is an array of threads.
 \begin{lstlisting}
@@ -732,7 +831,7 @@ The result is an array of threads.
     ]
 \end{lstlisting}
 \clearpage
-\subsection{Create a thread}
+\subsubsection{Create a thread}
 tree.functions.createThread(self,"tTitle","tDescription")\\
 The result is the created thread.
 \begin{lstlisting}
@@ -753,7 +852,7 @@ The result is the created thread.
         }
 \end{lstlisting}
 
-\subsection{Modify a thread}
+\subsubsection{Modify a thread}
 Query=tree.functions.setThread( self,"tId","tTitle","tDescription","tStatus")
 \\The result is the modified thread.
 \begin{lstlisting}
@@ -774,7 +873,7 @@ Query=tree.functions.setThread( self,"tId","tTitle","tDescription","tStatus")
         }
 \end{lstlisting}
 
-\subsection{Quick check}
+\subsubsection{Quick check}
 Query=tree.functions.quickCheck(self)\\
 The result will be a simple array of integer. The first integer represents the number of threads at the database and the second the number of messages.
 
@@ -785,7 +884,7 @@ The result will be a simple array of integer. The first integer represents the n
     ]
 \end{lstlisting}
 
-\subsection{Get messages for a thread}
+\subsubsection{Get messages for a thread}
 Query=tree.functions.getMsgsForThread(self,"tId")\\
 The result will be an array of messages.
 \begin{lstlisting}
@@ -806,7 +905,7 @@ The result will be an array of messages.
     ]
 \end{lstlisting}
 
-\subsection{Create a message}
+\subsubsection{Create a message}
 Query=tree.functions.createMsg(self,"tId","mTitle","mContent","mLink")\\
 The result is the created message.
 \begin{lstlisting}
@@ -825,7 +924,7 @@ The result is the created message.
         }
 \end{lstlisting}
 
-\subsection{Modify a message}
+\subsubsection{Modify a message}
 Query=tree.functions.setMsg(self,"mId","mTitle","mContent","mLink")\\
 The result is the modified message.
 \begin{lstlisting}
