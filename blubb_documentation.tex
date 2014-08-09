@@ -657,7 +657,7 @@ If the list has more than 7 items the user needs to scroll to see all entries.
 \end{itemize} 
 
 \subsubsection{Start of the activity}
-When the Activity is started it will first check whether it's possible to log in at the beap server. If the username and password is not stored at the Shared Preferences it will check whether threads are available at the local SQLite database. In case neither a login is possible nor any threads are stored the ActivityLogin will be started. Otherwise the BlubbThreads are loaded form the SQLite database and displayed in the ListView of the activity. But if a automatic login is possible the BlubbThreads will be updated form beap and reload to the list.
+When the ActivityThreads is started it will first check whether it's possible to log in at the beap server. If the username and password is not stored at the Shared Preferences it will check whether threads are available at the local SQLite database. In case neither a login is possible nor any threads are stored the ActivityLogin will be started. Otherwise the BlubbThreads are loaded form the SQLite database and displayed in the ListView of the activity. But if a automatic login is possible the BlubbThreads will be updated form beap and reload to the list.
 
 \subsubsection{Layout structure}
 The Layout for the ActivityThreads is defined in \code{threads_activity_layout.xml}.
@@ -677,7 +677,8 @@ Most actions a user can perform with this activity are accessed through the menu
 
 \subsubsection{ListView, ArrayAdapter and ThreadViews}
 A ListView is a view group that displays a list of scrollable items\citep{aDefListView}. The items are loaded to the ListView via a ListAdapter. In case of the ActivityThreads, the ListAdapter is an ThreadArrayAdapter, extending a ArrayAdapter, containing a list of BlubbThread objects. The items for the ListView are provided by these objects. Should a object of its list be displayed the ThreadArrayAdapter calls \code{getView()} on it. Depending on the current state of the thread it will return a small or a big view. The threads have an OnClickListener and an OnLongClickListener, both given to it in the constructor of the ThreadArrayAdapter. On click on a thread view a new Intent will be constructed and the thread ID will be given as an extra to it. The Intent will start a ActivityMessages for the clicked thread.\\
-On a long click the view will change its size or switch from its layout between \code{thread_small_layout.xml} and \code{thread_big_layout.xml}. A button on the big layout will start the edit thread dialog.
+On a long click the view will change its size or switch from its layout between \code{thread_small_layout.xml} and \code{thread_big_layout.xml}. A button on the big layout will start the edit thread dialog.\\
+
 \subsubsection{Create thread and edit thread dialogues}
 To create a new thread the user has to enter the title and a description in a dialog window. The layout for the create thread dialog is defined in \code{create_thread_dialog.xml}. It consists of two LinearLayouts. The first contains a TextView for the dialog title, two EditTexts for entering the title and description for the thread. Two buttons are in the second. The green one to create with the entries of the two EditTexts a new thread the other to cancel the dialog window. When the user clicks the green button a new AsyncNewThread will be created and executed. See \ref{subsubsec:AsyncNewThread}. To start a create thread dialog \code{newThreadDialog()} must be called from within an ActivityThreads object.
 The dialog to modify a thread is similar build like the dialog to create a new thread. Except that between the two buttons lays a Spinner containing the different statuses for the thread. A Spinner is an android equivalent for a drop-down list or combo box. The user can select one of three predefined items. For the status they are:
@@ -689,13 +690,111 @@ The dialog to modify a thread is similar build like the dialog to create a new t
 If the user hits the green button on this dialog an AsyncSetThread will be executed. For details see section \ref{subsubsec:AsyncSetThread}. The dialog window will start if \code{editThreadDialog()} is called from within an ActivityThreads object.
 
 \subsection{ActivityMessages}
+The ActivityMessages will start when the user clicks on one thread in the ActivityThread. It's purpose is to show all messages belonging to the clicked thread. The appearance of a message depends on who has created it and whether it is new or has been loaded previously. The user can perform different actions with the messages:
+\begin{itemize}
+\item Write a new message.\\
+Clicking in the EditText on the bottom of the activity will open the soft keyboard. Alternatively this can also be achieved by clicking 'New message' in the menu of the activity. After entering a text the message can be sent by clicking the green button on the right side of the EditText.
+
+\item Refresh the list with messages.\\
+This action can be accessed through the menu. It will reload the messages from beap and if new messages are available show them on top of the ListView.
+
+\item Reply to a message.\\
+Every message has a small button to reply to it. Like when writing a new message this starts the soft keyboard and works the same way as writing a new message but will be send as a reply.
+
+\item Edit a message.\\
+The user can modify own messages by clicking the edit button besides the reply button. The current content of the message will be set to the EditText and be editable for the user. Clicking the green button, again will send the content of the EditText. 
+
+\end{itemize}
+
+\subsubsection{Start of the ActivityMessages}
+It is important to add a thread ID as an extra to the Intent that starts the ActivityMessages. With this ID the messages can be requested form the SQLite database and the beapDB. On start of the activity it will first prepare the message ListView with a header containing the thread's title, creator and description. The layout for the header is defined in \code{messages_activity_lv_header.xml}. It will also start the InputView, so the user can enter messages. After that the messages are loaded from the SQLite database and then from the beapDB. In this way the user sees most messages immediately and the new just pop up. 
+
+\subsubsection{Layout structure}
+The file \code{activity_messages_layout.xml} defines the layout for the ActivityMessages. Like the ActivityThreads it contains a ListView and a ProgressBar. The ListView shows the messages and the Progressbar indicates that a background process is in progress. On the bottom of the activity's window the InputView supplements the layout. Here can the user enter and send new messages. It consists of an EditText and a Button. For instance a new message can be entered to the EditText and be sent by clicking the Button. 
+The InputView is used to write a new, modify or reply to an existing message. The different modes are set up by the methods \code{startInputView()}, \code{ replyToMessage()} and \code{changeMessage()} in the ActivityMessages.
+From the menu the user can refresh the messages and start the creating of a new one. \\
+
+MessageViews are created by a BlubbMessage object.
+How a MessageView looks depends on three factors. A message from the thread creator will have a lighter background, messages from the current user appear on the right side of the screen the others on the left side and new messages have a red background. Combining these, results to eight different message appearances.
+The basic layout for all is the \code{message_layout.xml}. The views contained in the MessageView are five TextViews, two Buttons and one custom ContentView.
+The TextViews are for:
+\begin{itemize}
+\item \code{message_layout_icon_tv}\\
+For the icon of the message. The font of this TextView is set to BeapIconic and will show either the letter 'U' or '@' if the message is a reply to another message. According to the role of the creator the color will be red for admins, yellow for project manager and blue for regular user.
+
+\item \code{message_layout_creator_role_tv}\\
+Shows the creator's role as text. Currently it is set 'INVISIBLE'.
+
+\item \code{message_layout_creator_tv}\\
+Shows the user name of the message creator.
+
+\item \code{message_layout_title_tv}\\
+This TextView displays the title of a message. The current text messages are entered without title, so this will be mostly empty but nevertheless important for further message types.
+
+\item \code{message_layout_date_tv}\\
+The date when the message was created will be displayed in this TextView. In a BlubbMessage object the date is represented by a Date object. A SimpleDateFormat object from the BlubbMessage formats the string representation of the date to a specified pattern. This is defined in the constant \code{BlubbMessage.DATE_PATTERN}.
+
+\end{itemize}
+
+The ListView of the ActivityMessage is populated with MessageViews through a MessageArrayAdapter inheriting from the ArrayAdapter class. 
+In its constructor it expects a list of BlubbMessages. To get the view for a message the MessageArrayAdapter just invokes \code{getView()} on the corresponding object of this list. 
+
+\subsubsection{Menu}
+The menu at the ActionBar of a ActivityMessages has only two items, one to set up the InputView for creating a new message, the other just to reload the messages from the beap server. Clicking the item 'Create a new message' will simply call \code{startInputView()}, which sets up the InputView properly. 'Refresh' executes an AsyncGetAllMessagesToThread, for details see section  \ref{subsubsec:AsyncGetAllMessagesToThread}.
+
+\subsubsection{ListView and ArrayAdapter}
 
 \subsection{ActivityLogin}
 
 \subsection{Notifications}
 
+\subsection{Design}
+
 \section{Asynchronous tasks}
-\subsubsection{AsyncTasks and Exceptions}
+\subsubsection{AsyncTasks}
+Tasks like network operations should not be executed on the UI thread (in this subsection a thread means the java.lang.Thread). They probably take some seconds to finish and would block the user interface meanwhile. So it is recommended to run long lasting jobs on a background thread. 
+Android provides different mechanisms for running a task in the background.
+Services are meant for long lasting tasks and are not affected by the lifecycle events of an activity. But they can't interact directly with the UI. \\
+\appname  is mostly considered to display content provided by the beap server. Therefor many requests are send by the UI. For instance the creation of a new thread. A service could execute the request but the updating of the user interface would be tricky. The abstract class AsyncTask enables proper and easy use of the UI thread. This class allows to perform background operations and publish results on the UI thread without having to manipulate threads or handlers\citep{aDefAsyncTask}
+There are two rules for background threads
+\citep{aDefProcThreads}:
+\begin{enumerate}
+	\item Do not block the UI thread
+	\item Do not access the Android UI toolkit from outside the UI thread
+\end{enumerate}
+With AsyncTask both can be met easily. Therefor all network operations at \appname  run on them. All AsyncTasks are inner classes of an activity. They extend the class AsyncTask and must implement the \code{doInBackgroud()} method, which will run on the background thread. The result of it is delivered to \code{onPostExecute()}. Since this runs on the UI thread, it is easy to publish the results. In the following section all AsyncTasks are explained.
+
+\subsubsection{Exceptions}
+AsyncTasks miss a proper way of exception handling. There is no build in mechanism to transfer exceptions form a background to the main thread. To maintain this matter the asyncTask classes have all a field for a BlubbException. All custom exeptions in \appname  inherit from BlubbException. In case a excetpion is thrown in \code{doInBackgroud}, it must be caught and set to this field. The handling of it can then take place in \code{onPostExecute}, see listing \ref{lst:Exception}.
+
+\begin{lstlisting}[caption=Exception handling in AsyncTasks, label=lst:Exception]
+private class AsyncNewThread extends AsyncTask<String, Void, BlubbThread> {
+        
+        BlubbException blubbException;
+
+        @Override
+        protected BlubbThread doInBackground(String... parameter) {
+            String title = parameter[0];
+            String description = parameter[1];
+            try {
+            	ThreadManager manager = ThreadManager.getInstance();
+            	BlubbThread thread = manager.createThread(
+                        ActivityThreads.this, title, description);
+                return thread;
+            } catch (BlubbException e) {
+                this.blubbException = e;
+            }
+            return null;
+        }
+        
+        @Override
+        protected void onPostExecute(BlubbThread thread) {
+            getApp().handleException(blubbException);
+        	...
+        }
+	}
+\end{lstlisting}
+Mostly the exceptions are forwarded to the BlubbApplication. This will show a Toast message according to which type of exception it was. The text for each message is defined in the file \code{res/values/strings.xml}.
 
 \subsection{AsyncTasks of the ActivityThreads}
 
@@ -754,6 +853,11 @@ To modify a thread a AsyncSetThread is needed. It receives a BlubbThread object,
 Like the creation of a thread the modification will be executed by the ThreadManager. The AsyncSetThread simply calls \code{setThread(..)} on an instance of it.
 
 If the modification of the thread was successful a Toast informs the user about it and the currently displayed threads will be updated.
+
+\subsection{AsyncTasks of the AcitvityMessages}
+
+\subsubsection{AsyncGetAllMessagesToThread}
+\label{subsubsec:AsyncGetAllMessagesToThread}
 
 \section{Manifest}
 
