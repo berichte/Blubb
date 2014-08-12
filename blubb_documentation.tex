@@ -55,7 +55,7 @@
   breaklines=true,
   breakatwhitespace=true,
   tabsize=3,
-  escapeinside=`` 
+  escapeinside=``
 }
 
 
@@ -64,10 +64,11 @@
 \graphicspath{ {images/} }
 
 
-\newcommand{\appname}{ablubb}
+\newcommand{\appname}{blubb}
 \newcommand{\blubb}{blubb}
 \newcommand{\beapDB}{beapDB}
 \newcommand{\beapServer}{beap server}
+\newcommand{\beap}{beap}
 
 \newcommand{\code}[1]{\lstinline{#1}}
 
@@ -165,21 +166,25 @@ project management \citep{mihaela2013measurement}.
 \section{Permissions and user types}
 
 \chapter{Blubb android app}
-
-
 \section{Architecture overview}
- Beap lightweight user bulletin board (\blubb{}) is an application to manage the communication within a project. A mobile front end improves the availability of the project members. They become mobile reachable with their smartphones. Unlike a mobile website a native app offers the possibility that the user can read messages even offline. Additionally it can use notifications to get the attention of users and improve their availability. \\
-In order to realize this task an android application has been implemented. This technical documentation describes the way  \appname{} is operating.\\
-\appname{} can be set apart in three main parts: 
+ Beap lightweight user bulletin board (\blubb{}) is an application to manage the communication within a project. A mobile front end improves the availability of the project members. They become more reachable with their smartphones and tablets. Unlike a mobile website a native app offers the possibility that the user can read messages even offline. Additionally it can use notifications to grab the attention of users and improve their availability. \\
+In order to realize this task an android application (\appname{} ) has been implemented. This technical documentation describes the way  \appname{} is operating.\\
+\appname{} can be separated in three main parts: 
 
 \begin{itemize}
-\item{The Data storage,}
-\item{The View (Front end, user interface),}
-\item{The Managers or controllers.}
+\item{Data storage,}
+\item{View (Front end, user interface) and}
+\item{Managers or controllers.}
 \end{itemize}
 
-The data storage itself consist of two nearly redundant databases. A \beapDB{} at a \beapServer{} is the central database for all user. It is the exchange server for all data. The second is a local SQLite database mirroring the data form the \beapDB{}. This is needed to provide the offline access and to add some user specific fields to the data sets, e.g. that a message has already been read.\\
-Within android activity classes implement the user interface. At the current state of the project there are four different activities:
+\begin{figure}[!ht]
+    \includegraphics[width=\linewidth]{placeholder.png}
+	\caption{Architecture overview} 
+	\label{fig:ArchOV}
+\end{figure}
+
+The data storage itself consist of two nearly redundant databases. A \beapDB{} at a \beapServer{} is the central database for all user. It works as the exchange server for all data. The second is a local SQLite database mirroring the data form the \beapDB{}. This is needed to provide the offline access and to add some user specific fields to the data sets, e.g. that a message has already been read.\\
+Activity classes implement the user interface (UI). At the current state of the project there are four different activities:
 
 \begin{itemize}
 \item{ThreadsActivity}
@@ -191,70 +196,53 @@ Within android activity classes implement the user interface. At the current sta
 \begin{figure}[!ht]
 	\centering
     \includegraphics[width=\linewidth]{ActivitiesOverview.png}
-	\caption{Activities navigation.}
+	\caption{Activities navigation}
+	\label{fig:ActivitiesNav}
 \end{figure}
 
-The main purpose of the ThreadsActivity is to show the list with available BlubbThreads but it is the center of the applications user interface, too.\\ A user can access all the other activities from there. Through a click on one list item he starts the MessageActivity. This shows a list of BlubbMessages that belong to the clicked thread. \\
-- user can access login and settings through the menu of threadsActivity
-- loginActivity is for reset pw too
-- Settings will be accessed through the menu of ThreadActivity, too.
-- From Login, Messages and Settings BackButton always goes to ActivityThreads.
+The main purpose of the ThreadsActivity is to show the list with available threads but it is the center of the applications user interface, too.\\ 
+A user can access all the other activities from there. 
 
 
-- User can input data: 
+Through a click on one list item he starts the MessageActivity. This shows a list of BlubbMessages that belong to the clicked thread. \\
+The ActivityLogin and ActivitySettings will be start when the corresponding item in the menu of ActivityThreads has been clicked. In the ActivityLogin the user can either log in or perform a password reset.
+In the ActivitySettings only the frequency of the PullService can be set. For details about this service see section \ref{subsec:notifications}.
 
-at LoginActivity:
-- login
-- ResetPw
-- Initialize pw, throgh dialog called when pw is init password
 
-at ThreadsActivity:
-- create new thread (title and description)
-- set thread (title, description, status)
+The ActivityThreads can be accessed from all other Activities with the BackButton.
 
-at MessagesActivity:
-- create new message (text content, later other content types)
-- edit message(text content)
-- reply to message
-- jump to message replied to
 
-at settingsActivity
-- set frequency of the background pull service
-
-additionally a background service. Via alarm service of android.
-performs a quickCheck at beap and compares the number of threads and messages at beap and locally at the sqlite db. if new content available makes notification to inform user.
-
-link between views and data storage are three manager classes
+The connection between the Activities and the data storage is made by three manager classes:
 \begin{itemize}
 \item{SessionManager}
 \item{ThreadManager}
 \item{MessageManager}
 \end{itemize}
 
-sessionmanager holds sessioninfo - manages all matters with the session: performs login from loginActivity - makes auto login when username and password are at preferences - makes session refresh if necessary and provides the session id needed for all interactions with the beap server quickCheck 
+The SessionManager holds an object of the type SessionInfo and manages all matters about the session, like performing a login, auto login when possible, refreshes the session if necessary and provides the session ID, that is needed for all interactions with the \beapServer{}. Additionally it makes a quick check at the \beapDB{}, to see whether new messages or threads are available.\\
 
-ThreadManager manages all matters with blubbthreads. get threads form beap server, get threads from the sqlitedb, compare both and add new from server as 'new' marked threads to sqlite, add a thread to both, edit thread at both, get new threads
+Managing all matters with threads is the task of the ThreadManager. The tasks are to get threads from \beapDB{}, get threads from the SQLite database, compare the threads from beap and SQLite and mark new threads as 'new', add a thread to the data storage and modify an existing thread. \\
 
-MessageManager similar to ThreadManager. get messages for thread from beap, from sqlite, compare both lists and mark new as 'new' 
-
+The MessageManager has the corresponding tasks for messages. 
 \section{Threads and messages}
 \subsection{Purpose}
-\appname  is an application to manage the communication for small scale projects. Communication is the act of sending a message from a sender to a receiver. In case of \appname  the sender is always a single person but the receiver are all participants of the project. Even in a very small project a lot of messages must be sent to maintain a proper communication. So it is important to organize all messages in subjects, otherwise it would end in a mess.
+\appname{} is an application to manage the communication for small scale projects. Communication is the act of sending a message from a sender to a receiver. In case of \appname{} the sender is always a single person but the receiver are all participants of the project. Even in a very small project a lot of messages must be sent to maintain a proper communication. So it is important to organize all messages in subjects, otherwise it would end in a big mess.
+
 
 To implement this model three objects are needed. User representing the sender and receiver, messages that can be sent and threads to organize the messages to subjects. A user is represented by the user ID. That is also the unique user name within the application. Messages are implemented by the BlubbMessage class and threads by the BlubbThread class.
 
 \subsection{Messages}
 \subsubsection{The class BlubbMessage}
-An object of the class BlubbMessage represents a message within the \appname  application. Such an object holds all information about the message plus it can create a MessageView for the visual representation in an activity. 
+An object of the class BlubbMessage represents a message within the \appname{} application. Such an object holds all information about one message, plus it can create a MessageView for the visual representation in an Activity. 
 
 To hold all the information a BlubbMessage has many fields, mostly of the type string: 
 \begin{itemize}
 \item \code{String mID}\\
 Unique ID of the message.
 \item \code{String mTitle}\\
-Title of the message. For text messages this is optional but must be sent to the beapDB as "UNDEFINED".
+Title of the message. For text messages this is optional but must be sent to the \beapDB{} as "UNDEFINED".
 \item \code{MContent mContent}\\
-In the current version only TextContent is available. For further content types the interface MContent must be implemented. 
+In the current version only TextContent is available, which is implemented by the class TextContent. For further content types the interface MContent must be implemented. 
 \item \code{String mCreator}\\
 The unique ID/username of the user who wrote the message.
 \item \code{String mCreatorRole}\\
@@ -268,11 +256,11 @@ If the message is a reply to another message the link points to this message and
 \item \code{Date mDate}\\
 The date of creation of the message. 
 \item \code{boolean isNew}\\
-The field isNew indicates whether the user of the app has read the message. It will be set to 'true' when loading it the first time from the beapDB and to 'false' when the user closes the ActivityMessages for the messages thread (in \code{ActivityMessages.onStop()}). 
+The field isNew indicates whether the user of the app has read the message, yet. It will be set to 'true' when loading it the first time from the \beapDB{} and to 'false' when the user closes the ActivityMessages for the messages thread (in \code{ActivityMessages.onStop()}). 
 
 \end{itemize}
 
-A BlubbMessage can be constructed in two ways. Either with a proper formatted JSON-Object, like in listing \ref{lst:MessageJson} or by providing all needed fields. 
+A BlubbMessage can be constructed in two ways. Either with a proper formatted JavaScript Object Notation (JSON) object, like in listing \ref{lst:MessageJson} or by providing all of the fields above. 
 \begin{lstlisting}[caption=Message JSON object, label=lst:MessageJson]
 {
         "mId": "m2014-07-16_170322_S-Gross",
@@ -289,19 +277,22 @@ A BlubbMessage can be constructed in two ways. Either with a proper formatted JS
 }
 
 \end{lstlisting}
-The MessageManager builds BlubbMessages when receiving messages from the beap server. Therefor it uses the JSON object in the response. The field 'isNew' will then automatically set to true.
+The MessageManager builds BlubbMessages when receiving messages from the \beapServer{}. Therefor it uses the JSON object in the response. The field 'isNew' will then automatically set to true.
 
-The SQLite database uses the constructor where all fields must be set. 
+
+The SQLite database uses the constructor where all fields must be set manually. 
 
 \subsubsection{MessageView}
 A MessageView represents a message in the UI and is created by a BlubbMessage object. It is shown as an item in the ListView of the ActivityMessages.
 
-How a MessageView looks depends on three factors. A message from the thread creator will have a lighter background, messages from the current user appear on the right side of the screen the others on the left side and new messages have a red background. Combining these, results to eight different message appearances.
+
+How a MessageView looks depends on three factors. A message from the thread creator will have a lighter background, messages from the current user appear on the right side of the screen the others on the left side and new messages have a red background. Combining these, results in eight different appearances of messages.
 The basic layout for all is the \code{message_layout.xml}. The views contained in the MessageView are five TextViews, two Buttons and one custom ContentView.
-The TextViews are for:
+The TextViews are:
+
 \begin{itemize}
 \item \code{message_layout_icon_tv}\\
-For the icon of the message. The font of this TextView is set to BeapIconic and will show either the letter 'U' or '@' if the message is a reply to another message. According to the role of the creator the color will be red for admins, yellow for project leader and blue for regular user.
+Used for the icon of the message. The font of this TextView is set to BeapIconic and will show either the letter 'U' (in BeapIconic this is the shape of a head) or '@' if the message is a reply to another message. According to the role of the creator the color will be red for admins, yellow for project leader and blue for regular user.
 
 \item \code{message_layout_creator_role_tv}\\
 Shows the creator's role as text. Currently it is set 'INVISIBLE'.
@@ -317,17 +308,19 @@ The date when the message was created will be displayed in this TextView. In a B
 
 \end{itemize}
 
+The figure \ref{fig:MessageViewEx} shows exemplary a message of a regular project participant and a reply of the app user, who is a project leader.
 \begin{figure}[!ht]
 	\centering
     \includegraphics[width=\linewidth]{MessageView.png}
 	\caption{MessageView example}
+	\label{fig:MessageViewEx}
 \end{figure}
 
 \subsection{Threads}
 \subsubsection{The class BlubbThread}
-In a project, there are different subjects to discuss. A thread contains the messages for one subject, e.g. bugs in a software development project. This enables to give the communication in a project a certain structure. 
+In a project, there are different subjects to discuss. A thread contains the messages for one subject, e.g. bugs in a software development project. This gives the communication in a project a certain structure. 
 
-The class BlubbThread represents a thread in \appname . Like the BlubbMessage it has many fields to hold all information:
+The class BlubbThread represents a thread in \appname{}. Like the BlubbMessage it has many fields to hold all information:
 \begin{itemize}
 \item \code{String tId}\\
 Unique ID for the thread.
@@ -338,15 +331,15 @@ Description for the thread, that should briefly explain its purpose.
 \item \code{String tCreator}\\
 ID of the creator.
 \item \code{String tCreatorRole}\\
-Like in a message, this is mainly used to highlight special kinds of users like admins or project leader, since their content might be more important.
+Like in a message, the creator role is mainly used to highlight special kinds of users like admins or project leader, since their content might be more important.
 \item \code{ThreadStatus tStatus}\\
-The status of a thread can either be OPEN, CANCELED or SOLVED. Is it CANCELED or SOLVED it is not possible to post any new messages. SOLVED hereby indicates that the subject has come to a successful end, while CANCELED indicates it has failed.
+The status of a thread can either be OPEN, CANCELED or SOLVED. Is it CANCELED or SOLVED it is not possible to post any new messages. SOLVED indicates that the discussion has come to a successful end, while CANCELED shows that it has failed.
 \item \code{Date tDate}\\
 The date of creation of the thread.
 \item \code{int tMsgCount}\\
-The number of messages belonging to this thread.
+The number of messages, belonging to this thread.
 \item \code{boolean isNew}\\
-Indicates whether the thread is new or not.
+This field tells whether the thread is new or not.
 \item \code{boolean hasNewMsgs}\\
 When the thread has new messages this will be 'true' otherwise it will be 'false'.
 
@@ -369,22 +362,24 @@ Like the BlubbMessage a BlubbThread has two constructors. One needs every of the
         "tMsgCount": 10
     }
 \end{lstlisting}
-The ThreadManager builds BlubbThreads with the JSON object, when receiving threads from the beapDB. Since the fields 'isNew' and 'hasNewMsgs' are not included in the JSON object they will be set 'true'. This is because only new threads are not contained in the SQLite database and will be added instead of updated. 
+
+The ThreadManager builds BlubbThreads with the JSON object, when receiving threads from the beapDB. Since the fields 'isNew' and 'hasNewMsgs' are not included in the response they will be set to 'true'. This is because only new threads are not contained in the SQLite database and will be added instead of updated. 
 
 The SQLite database uses the other constructor to create BlubbThread objects.
 
 \subsubsection{ThreadView}
-ThreadViews are created by BlubbThread objects. In fact there are two Views to represent a thread in the ListView of the ActivityThreads, a small and a big one. 
-The small shows the most important information about the thread like the title, creator, status and the message counter. Additionally the big view shows the creator role, date, description and a button for editing the thread. The user can switch these views with a long click on the current ThreadView. 
+ThreadViews are created by BlubbThread objects. In fact there are a small and a big View to represent a thread in the ListView of the ActivityThreads. 
+The small shows the most important information about the thread like the title, creator, status and the message counter. Additionally the big view displays the creator role, date, description and a button for editing the thread. The user can switch these views with a long click on the current ThreadView. 
 
 The file \code{thread_head_layout.xml} defines the layout for the part both views use:
 \begin{itemize}
 \item \code{thread_status_tv}\\
-Shows the status of the thread. The font for this TextView is set to BeapIconic to show the icons indicating the status. A head or letter 'U' stands for OPEN, a green check mark for SOLVED and a red x mark for CANCELED. The color of the head stands for the role of the creator, red for admins, yellow for project leader and blue for regular user. 
+Shows the status of the thread. The font for this TextView is set to BeapIconic to show the icons indicating the status. A head or letter 'U' stands for OPEN, a green check mark for SOLVED and a red restricted sign for CANCELED. The color of the head stands for the role of the creator. Red is for admins, yellow for project leaders and blue for regular users, see figure \ref{fig:ThreadStatusIcons}. 
 \begin{figure}[!ht]
 	\centering
     \includegraphics[width=\linewidth]{StatusIcons.png}
 	\caption{Statuses of threads.}
+	\label{fig:ThreadStatusIcons}
 \end{figure}
 
 \item \code{thread_title_tv}\\
@@ -397,7 +392,8 @@ TextView for the creator.
 TextView for the message counter. If the thread has a new message the color of it will be red.
 
 \end{itemize}
-The small ThreadView is defined in the file \code{thread_small_layout.xml} and contains only the head layout. Custom layouts can be integrated in layouts with the 'include' tag, see listing \ref{AsyncCheckLogin}.
+
+The small ThreadView is defined in the file \code{thread_small_layout.xml} and contains only the head layout. Custom layouts can be integrated in layouts with the 'include' tag, see an example in listing \ref{AsyncCheckLogin}.
 
 \begin{lstlisting}[caption=Thread small layout, label=lst:ThreadSmallLayout]
 <?xml version="1.0" encoding="utf-8"?>
@@ -419,110 +415,126 @@ In addition to the head layout the big view contains following items:
 Shows the creator role and the date of creation for the thread.
 
 \item \code{thread_description_tv}\\
-Shows the description of the thread.
+TextView for the description of the thread.
 
 \item \code{thread_edit_button}\\
-The button to open the edit thread dialog. If the current user is not the creator of the thread it will be invisible. The font of it is the BeapIconic font and shows the letter 'E'.
+This is the button to open the edit thread dialog. If the current user is not the creator of the thread it will be invisible. The font of it is the BeapIconic font and shows the letter 'E'.
 
 \end{itemize}
-
+The figure \ref{fig:ThreadViewEx} shows an example of one small and one big ThreadView.
 \begin{figure}[!ht]
 	\centering
     \includegraphics[width=\linewidth]{ThreadView.png}
 	\caption{ThreadView example}
+	\label{fig:ThreadViewEx}
 \end{figure}
 
 \section{Data storage}
 
-\subsection{beapDB at the beap server}
+\subsection{\beapDB{} at the \beapServer{}}
 
-\subsubsection{Communication with the beap server}
-Communication to the beap server via http requests 
-in manifest request permission for network - all actions demanding network work need to be in a separate thread not on user thread, see AsyncTasks.
-general scheme
-	- build a request string with RequestBuilder
-	- execute the html request with htmlRequest
-	- receive the response string and build a BlubbResopnse object
-	- pass this object to the calling method
-	- extract the result object within the BlubbResponse according to what requested, e.g. tree.functions.getAllThreads(self) build the BlubbThreads from the jsonArray that is the result.
-	
+\subsubsection{Communication with the \beapServer{}}
+Communication to the \beapServer{} is made via http requests. Therefor it is necessary to declare the internet permission in the App Manifest. Also the network access can not work on the main thread. So it is important to start the request only from separate threads (in this case the java.lang.Thread). For details see section \ref{sec:AsyncTasks}.
+The general sequence of events to perform a request is:
+\begin{enumerate}
+\item  Build a request string with the RequestBuilder.
+\item Execute the http request with an object of BlubbHttpRequest.
+\item Receive the response string and build a BlubbResopnse object.
+\item Pass this object to the calling method.
+\item Extract the result object within the BlubbResponse according to what was requested. For example if a new tread has been created with the request the result will contain a JSON object with which a BlubbThread can be build.
+\end{enumerate}
+
 \subsubsection{Building request strings}
-two different kinds of request strings, one for the beap server (all about the session) the other are queries at the beapDB, therefor they have different beapids..
-A request string for session contains following parts:
- 	- the url: http://blubb.traumtgerade.de:9980/
- 	- question mark for request: ?
- 	- BeapId: BeapSession 
- 	- Action: login, refresh, logout, check or setOwnPwd 
- 	- beap app version: at login
- 	- parameter: for session
- 		- login: uName, uPwd
- 		- check: BeapSession
- 		- refresh: BeapSession
- 		- logout: BeapSession
- 		- resetOwnPwd: uName, uPwd, newPwd1, newPwd2
-A request string for a login would look like this:
+For the communication with the \beapServer{} two different kinds of request strings are needed. One kind for the \beapServer{} itself (all requests about the session). The others are queries at the \beapDB{}. Therefor they have different beap IDs.
+A request string for session requests contains following parts:
+\begin{itemize}
+\item The url of the server, e.g. "http://blubb.traumtgerade.de:9980/".
+\item A question mark, indicating a request.
+\item The BeapId, "BeapSession".
+\item The desired action, either "login", "refresh", "logout", "check" or "setOwnPwd".
+\item The beap app version.
+\item Parameter for the action: 
+	\begin{itemize}
+	\item Login: Username and password.
+ 	\item Check: BeapSession.
+ 	\item Refresh: BeapSession
+ 	\item Logout: BeapSession
+ 	\item ResetOwnPwd: Username, password, new password and the confirmation of the new password.
+	\end{itemize}
+ 		
+\end{itemize}
+
+For example the request string for a login would look like this:
 \url{http://blubb.traeumtgerade.de:9980/?BeapId=BeapSession&Action=login&appVers=1.5.0 rc1&uName=Der-Praktikant&uPwd=test}
-request for beapdb is different:
-	- url:
-	- question mark:
-	- BeapId: beapDB
-	- sessionId:
-	- action: query
-	- queryStr: tree.functions.getAllThreads(self)
-parameter for the query in the braces, first parameter is a reference to the session object. for this application it's always the own session, so it's always self.
-Following a list of custom queries/functions available prefix always "tree.functions.:
+
+The request for the \beapDB is different and contains the following parts:
+\begin{itemize}
+
+\item The url of the server, e.g. "http://blubb.traumtgerade.de:9980/".
+\item A question mark, indicating a request.
+\item The BeapId, "BeapDB".
+\item The session ID, e.g. "50ae0c60282372467016c832840cd678".
+\item The action will always be "query".
+\item A query that will be executed at the \beapDB{}, \\
+e.g. "tree.functions.getAllThreads(self)".
+\end{itemize}
+
+Parameter for the query are in braces. The first parameter is a reference to the session object. For \appname{} it's always the own session, so it's "self". 
+Following a list of available queries. They all have the prefix  "tree.functions.":
 \begin{itemize}
 \item{\code{getAllThreads(self)}}
 \item{\code{createThread(self, "Thread title", "Thread description")}}
-\item{\code{setThread(self, "Thread id", "Thread title"[opt.], "Thread description"[opt.], "Thread status"[opt.])}}
+\item{\code{setThread(self, "Thread id", "Thread title"[opt.],}\\
+\code{"Thread description"[opt.], "Thread status"[opt.])}}
 \item{\code{getMsgsForThread(self, "Thread id")}}
 \item{\code{createMsg(self, "Thread id", "Message title"[opt.],MessageContent, "Message link"[opt.])}}
-\item{\code{setMsg(self, "Message id", "Message title"[opt.], "Message content"[opt.], "Message link"[opt.])}}
+\item{\code{setMsg(self, "Message id", "Message title"[opt.],}\\
+\code{"Message content"[opt.], "Message link"[opt.])}}
 \item{\code{quickCheck(self)}}
 \end{itemize}
 
 
  \subsubsection{Parsing parameter}
-every parameter send to the beapDB like username, password, a text content of a message etc. need to be encoded to UTF-8.
-BPC (Blubb Parameter Checker) uses a URLEncoder to encode the parameter to utf-8. 
+Every parameter send to the beapDB like username, password, a text content of a message etc. need to be encoded to UTF-8.
+The class BPC (Blubb Parameter Checker) uses a URLEncoder to encode parameter. 
 Additionally escape character must be escaped like:
-	- newline "\textbackslash n" to "\textbackslash \textbackslash n"
-	- tab "\textbackslash t" to "\textbackslash \textbackslash t"
-	- "\textbackslash \textbackslash \textbackslash ""
-When all newline, tabs and " are escaped the whole string is packed within two " and then encoded to utf-8.
-Lets try a simple example. A user types a message like:
+\begin{itemize}
+\item newline "\textbackslash n" to "\textbackslash \textbackslash n"
+\item tab "\textbackslash t" to "\textbackslash \textbackslash t"
+\item "\textbackslash \textbackslash \textbackslash ""
+\end{itemize}
+	
+When all newline, tabs and quotation marks are escaped, the whole string is packed within two quotation marks and then encoded to utf-8.
+Lets try a simple example. A user types a message like in listing \ref{lst:ExStr}
 
-\begin{lstlisting}[caption=Example string]
-We need to encode character like:
+\begin{lstlisting}[caption=Example string, label=lst:ExStr]
+Always encode character like:
 	"`\textcolor{mauve}{ü}`"
 \end{lstlisting}
-\label{ExampleString}
 
-First the newlines, tabs and quotation marks must be escapted. The resulting string would look like this:
+First the newlines, tabs and quotation marks must be escaped. The resulting string will look like in listing \ref{lst:ExStr2}:
 
-\begin{lstlisting}[caption=Escaped character]
-"We need to encode character like:\n\t\"`\textcolor{mauve}{ü}`\""
+\begin{lstlisting}[caption=Escaped character, label=lst:ExStr2]
+"Always encode characters like:\n\t\"`\textcolor{mauve}{ü}`\""
 \end{lstlisting}
-\label{ExampleStringExcaped}
+
 After this the string is encoded in utf-8 and will be send to the server like:
 
-\begin{lstlisting}[caption=UTF-8 encoded string]
-"We%20need%20to%20encode%20character%20like%3A%5Cn%5Ct%5C%22%C3%BC%5C%22"
+\begin{lstlisting}[caption=UTF-8 encoded string, label=lst:ExStr3]
+"Always%20encode%20character%20like%3A%5Cn%5Ct%5C%22%C3%BC%5C%22"
 \end{lstlisting}
-\label{ExampleStringUTF8}
 
-The parameter send to the Request manager for all session request are parsed automatically. Parameter entered in a database query must be parsed with BPC by calling the static method parseStringParameterToDB, just like in the following example.
-\begin{lstlisting}[caption=Parse a string parameter]
+The parameter send to the RequestManager class for all session request are parsed automatically. Parameter entered in a database query must be parsed with BPC by calling the static method \code{parseStringParameterToDB()}, like in listing \ref{lst:ParseStringParameter}.
+\begin{lstlisting}[caption=Parse a string parameter, label=lst:ParseStringParameter]
 	...
 	String result = BPC.parseStringParameterToDB("\n`\textcolor{mauve}{ü}`bercool");
 	...
 \end{lstlisting}
-\label{ParseStringParameter}
 
 \subsubsection{Response from beap}
-The response from beap will always be a json object with the following structure: 
+The response from beap will always be a JSON object with the following shown in listing \ref{lst:beapResponse}. 
 \lstset{language=JavaScript}
-\begin{lstlisting}[caption=Json object for beap response]
+\begin{lstlisting}[caption=Json object for beap response, label=lst:beapResponse]
 {
 		BeapStatus : <int>, 	/* Response status, e.g. 200 for OK.*/
 		StatusDescr : <string>, /* A description for the status.*/
@@ -536,16 +548,15 @@ The response from beap will always be a json object with the following structure
 		}
 	}
 \end{lstlisting}
-\label{beapResponse}
 \lstset{language=java}
-BeapStatus and StatusDescr describe the status of a request at beap. The following are the most common statuses:
+BeapStatus and StatusDescr describe the status of a request at beap, e.g. that the request was correct. The following are the most common statuses:
 \begin{itemize}
 \item{200 - OK}
 \\The request could be processed properly and will contain the expected result.
 \item{203 - No content}
 \\The request could also be processed properly but there is no result.
 \item{204 - session already deleted}
-\\The sessionId is not valid any more.
+\\The session ID is not valid any more.
 \item{400 - request failure}
 \\A response will have this status mostly if parameter are missing.
 \item{401 - login required}
@@ -559,12 +570,12 @@ BeapStatus and StatusDescr describe the status of a request at beap. The followi
 \item{418 - syntax or reference error}
 \\The status for a error within a query string.
 \end{itemize}
-The result object will vary due to the request. Integer, json object or json array are the possible types of the result. 
+The result object will vary due to the request. Integer, JSON object or JSON array are the possible types of the result. 
 For details see appendix A.
 
 \subsection{SQLite as a local database}
 
-For android there are different storage options\citep{aDefStorageOpt}:
+The android system offers different storage options citep{aDefStorageOpt}:
 \begin{itemize}
 \item{shared Preferences \\key value pairs}
 \item{internal storage \\private data for app e.g in xml}
@@ -573,19 +584,20 @@ For android there are different storage options\citep{aDefStorageOpt}:
 \item{network connection \\Store data with own network server.}
 \end{itemize}
  
-
-For blubb used shared preferences for username, password, settings of pull service, for quickcheck the number of threads and messages at beapdb to compare them and request if new are available.
+For \appname{} the shared preferences are used to store the username, password, settings of pull service and the number of threads and messages at \beapDB{} to compare them and request if new are available.
 
 BlubbThreads and BlubbMessages are stored with a SQLite database. 
-Class accessing the database is the DatabaseHandler.
-it implements the SQLiteOpenHelper, which manages database creation and version management \citep{aDefSQLiteOpenHelper}
+The DatabaseHandler is the class through which the database can be accessed. It implements the SQLiteOpenHelper, which manages the database creation and version management \citep{aDefSQLiteOpenHelper}.
 
-The version number is a constant within the class and must be increased if any changes are made at the database, e.g. adding a new field to a table - if not database will probably crash.
-the names for the database, tables and column names are set with constants too. They should be accessed only through these constants to avoid typos. 
+The version number is a constant within the class and must be increased if any changes are made at the database, e.g. adding a new field to a table. If not done, the database will probably crash.
 
-Database consists of two tables - threads and messages
-they are created in onCreate(), it's called the first time the database is created. The primary key for the threads are the thread id, for the messages the message id, since they are already unique from the beapDB. The tables are connected via the thread id which is given for every message.
-The tables are nearly the same as at beap but have columns for the boolean values isNew in messages, isNew and hasNewMsg in threads. The boolean values are stored as ints and must be parsed. <1 equals true and 0 equals false. 
+
+The names for the database, tables and column names are set with constants, too. They should be accessed only through these constants to avoid typos. 
+
+
+The database consists of two tables for threads and messages.
+They are created in \code{onCreate()}. This is called the first time the database is created. The primary key for the threads are the thread ID, for the messages the message ID, since they are already unique from the \beapDB{}. The tables are connected via the thread ID which is given for every message.
+The tables are nearly the same as at the \beapDB but have columns for the boolean values 'isNew' in messages, 'isNew' and 'hasNewMsg' in threads. The boolean values are stored as ints and must be parsed. < 1 equals true and 0 false. 
 
 \begin{figure}[!ht]
 	\centering
@@ -594,9 +606,9 @@ The tables are nearly the same as at beap but have columns for the boolean value
 \end{figure}
 
 
-plain sqlstatement for the creation or threads and messages:
+In the listing \ref{lst:SQLTableCreation} the plain SQL statement for the creation of threads and messages tables is shown:
 \lstset{language=SQL}
-\begin{lstlisting}[caption=SQL code for creating the table messages]
+\begin{lstlisting}[caption=SQL code for creating the table messages, label=lst:SQLTableCreation]
 CREATE TABLE messages(
 	mId TEXT PRIMARY KEY,
 	mTitle TEXT,
@@ -608,9 +620,8 @@ CREATE TABLE messages(
 	mThreadId TEXT,
 	mLink TEXT,
 	mIsNew INTEGER)
-\end{lstlisting}
-\label{SQLTableMessages}
-\begin{lstlisting}[caption=SQL code for creating the table threads]
+
+
 CREATE TABLE threads (
 	tId TEXT PRIMARY KEY,
 	tTitle TEXT,
@@ -624,10 +635,9 @@ CREATE TABLE threads (
 	tIsNew INTEGER,
 	tHasNewMsg INTEGER)
 \end{lstlisting}
-\label{SQLTableThreads}
 \lstset{language=Java}
 
-The databaseHandler offers some methods to access the database:
+The databaseHandler offers some methods to access the database directly:
 
 \begin{itemize}
 \item{\code{addMessage(BlubbMessage message)} 
@@ -662,30 +672,49 @@ The databaseHandler offers some methods to access the database:
 \\Gets the number of threads stored in the database.}
 \end{itemize}
 
-The database can easily be accessed from any class of the project. Just instantiate an instance and call the desired method like in example. In order to make an instance the applications context must be provided, due to that the SQLite database is only accessible for the application which created it.
-\begin{lstlisting}[caption=Accessing the SQLite database]
+The database can easily be accessed from any class of the project. Just instantiate an object of the DatabaseHandler and call the desired method, like in listing \ref{lst:SQLiteAccessExample}. 
+\begin{lstlisting}[caption=Accessing the SQLite database, label=lst:SQLiteAccessExample]
 	...
 	BlubbMessage message = new BlubbMessage(result);
 	DatabaseHandler db = new DatabaseHandler(context);
 	db.addMessage(message);
 	...
 \end{lstlisting}
-\label{SQLiteAccessExample}
+In order to make an instance the applications context must be provided, due to that the SQLite database is only accessible for the \appname{} application.
 
 \section{Manager}
 
 \subsection{Singleton pattern}
-used the singleton pattern for all manager classes to provide global access to them. it's realized by making the constructor of the classes private and create a static instance. 
-\citep[p. 39]{cooper2000java}
-- one problem with android. singletons must be created within a context that's every time available.
-- Therefor the e.g. MessageManager.getInstance() must be called within the application class one time. 
-- android does not allow singltons to be instantiated other ways 
-- Extended the application class with BlubbApplication
-- the application can be accessed in activities an services via .getApplicaiton() and parsing the result to a BlubbApplication
-in the android manifest file need a entry for the used application class see example:
+All manager classes make use of the singleton pattern to provide global access to a single instance. The constructors of the SessionManager, ThreadManager and MessageManager have only private access. Each class holds one instance of it at a class variable. The static method \code{getInstance()} returns this instance and initializes it if necessary \citep{cooper2000java}, like in listing \ref{lst:SingletonEx}
+
+\begin{lstlisting}[caption=Example for the singleton pattern, label=lst:SingletonEx]
+public class SessionManager {
+
+	private static SessionManager instance;
+	
+	private SessionManager() {
+	}
+	
+	public static SessionManager getInstance() {
+		 if (instance == null) {
+		 	instance = new SessionManager();
+		 }
+		 return instance;
+	}
+}
+
+\end{lstlisting}
+
+The SessionManager mainly provides the session ID for interactions with the \beapDB{}. With the singleton design pattern it can be accessed easily throughout the whole program. 
+
+
+In android there is a little problem with the singleton pattern.
+The android system can kill Activities that are not in the foreground in extreme low memory situations. Because of this it is possible that a singleton will be not available for other Activities, if it has been instantiated in the context of an Activity. 
+The solution to this issue is to instantiate the singletons in the application context, that is available as long as the app is running. Therefore BlubbApplication extends the Application class. In its constructor it calls \code{getInstance()} on all three manager classes. In this way the instances belong to the application context and stay addressable for all contexts of \appname{}.
+To enable a custom Application class it must be declared in the manifest file like shown in listing \ref{lst:AppTagManifest}.
 
 \lstset{language=xml}
-\begin{lstlisting}[caption=Application tag of the manifest.xml]
+\begin{lstlisting}[caption=Application tag of the manifest.xml, label=lst:AppTagManifest]
 ...
 <application
         android:name=".blubbbasics.BlubbApplication"
@@ -695,113 +724,119 @@ in the android manifest file need a entry for the used application class see exa
         android:theme="@style/AppTheme">
         ...
 \end{lstlisting}
-\label{lst:AppTagManifest}
-
 \lstset{language=java}
-pay attention when making subclasses of singletons
-\\subclassing a singleton can be difficult, since this can work only if the base Singleton class has not been instantiated. \citep[p. 46]{cooper2000java} 
-
+Special attention must be payed when subclassing a singleton. This can be difficult, since the subclass can work only if the base class has not been instantiated \citep[p. 46]{cooper2000java}.
 
 \subsection{SessionManager}
-All queries at the beapDB need a valid session Id to authenticate the users identity and check weather the user has the permission to perform a certain query. after a login the beap server returns a response object. One part of this object is a SessionInfo object. The SessionManager holds this SessionInfo to provide access to it and the session Id within it.
-if the user has saved the credentials the login will be performed automatically, if not a SessionException will be thrown and the user should be asked to log in. The username and password will be stored temporarily so the user must not be bothered again while the app is running. 
-If the password is "init" the response status will be passwordInit, which means the user must set an own password and should be asked to do so. \\
+All queries at the beapDB need a valid session ID to authenticate the users identity and check whether the user has the permission to perform a certain query. After a login the \beapServer returns a response object. One part of it is always a SessionInfo object. The SessionManager holds this SessionInfo to provide access to it and the session ID within it.
 
-The session manager also provides a method to do a quickCheck at the beapDB and see whether there are any new threads or messages available. Beap will return a result array with just to integer. The first is the number of threads, the second the number of messages at the beapDB. If there are new threads or messages quickCheck will request them and return a QuickCheck object containing two lists with the new threads and messages.
-Furthermore the logout and password reset can be done through the SessionManager.
+If the user has allowed to saved the username and password, the login will be performed automatically. Otherwise the user need to log in manually. In both cases the username and password will be stored temporarily so the user must not be bothered again while the app is running. 
+If the password is "init" the response status will be 'passwordInit', which means the user must set an own password and should be asked to do so. \\
+
+The SessionManager also provides a method to do a quickCheck at the \beapDB{} and see whether there are any new threads or messages available. Beap will return a result array with just to integer. The first is the number of threads, the second the number of messages at the \beapDB{}. If there are new threads or messages they will be requested and returned in a QuickCheck object containing two lists with only the new threads and messages.
+
+
+Additionally the logout and password reset can be done through the SessionManager.
 Following a complete list of methods provided by the SessionManager:
 
 \begin{itemize}
 \item{\code{getSessionID(Context context)}}\\
-Get the session ID. If necessary and possible this will perform a auto login or session refresh.
+Returns a string with the session ID. If necessary and possible this will perform a auto login or refresh the session.
 
 \item{\code{login(String username, String password)}}\\
-Make a manual login. After this the session Id will be available and the session will be refreshed automatically.
+For a manual login. After this the session ID will be available and the session will be refreshed automatically.
 
 \item{\code{quickCheck(Context context)}}\\
-Make a quickCheck at beap and see whether new threads or messages available. If so the new ones will be available at the QuickCheck object like: \begin{lstlisting}
-QuickCheck quickCheck = sessionManager.quickCheck(context);
-List<BlubbThread> threads = quickCheck.threads;
-List<BlubbMessage> messages = quickCheck.messages;
+Makes a quickCheck at \beapDB{} and sees whether new threads or messages available. If so the new ones will be available in a QuickCheck object like: 
+\begin{lstlisting}
+	...
+	QuickCheck quickCheck = sessionManager.quickCheck(context);
+	List<BlubbThread> threads = quickCheck.threads;
+	List<BlubbMessage> messages = quickCheck.messages;
+	...
 \end{lstlisting}
 
-\item{\code{resetPassword(String username, String oldPassword, String newPassword, String confirmNewPassword)}}\\
-Performs a tree.functions.resetPwd(...) at beap and will return true if successful.
+\item{\code{resetPassword(String username,}\\
+\code{	String oldPassword, String newPassword, String confirmNewPassword)}}\\
+Performs a tree.functions.resetPwd(...) at the \beapServer{} and returns 'true' if this action was successful.
 
 \item{\code{getUserId(Context context)}}\\
 Returns a string with the current users username.
 
 \item{\code{logout(Context context)}}\\
-Logs the user out of the beap server, the session will not be active any more and a formerly, at the shared preferences saved password will be deleted. After this the user needs to log in manually.
-
-
+Logs the user out of the \beapServer{}, the session will not be active any more and a formerly, at the shared preferences saved password will be deleted. After this the user needs to log in manually again.
 \end{itemize}
 
 \subsection{ThreadManager}
-The Thread manager manages the access to all available threads. When it requests the threads from the beapDB it updates the SQLite database immediately. 
+The Thread manager manages the access to all available threads. When it requests the threads from the \beapDB{} it updates the SQLite database immediately. Following a complete list of public methods of the ThreadManager:
 
 \begin{itemize}
 \item{\code{getAllThreads(Context context)}}\\
-Gets first the threads from beapDB and updates the SQLite database then returns the list of threads from the SQLite database.
+Gets first the threads from \beapDB{} and updates the SQLite database with them. Finally it returns the list of threads from the SQLite database.
 
 \item{\code{getNewThreads(Context context)}}\\
-Get a list with all threads with the isNew tag set to true.
+Returns a list of BlubbThreads with all threads with the 'isNew' tag set to true.
  
 \item{\code{updateAllThreadsFromBeap(Context context)}}\\
-Update all threads at the SQLite database from the beapDB. Load them from SQLite.
+Updates all threads at the SQLite database from the \beapDB{}. Returns 'true' if the task has been completed successfully.
 
 \item{\code{getAllThreadsFromSqlite(Context context)}}\\
-Get all the threads stored on the local SQLite database.
+Returns a list of BlubbThreads with all the threads stored in the local SQLite database.
 
 \item{\code{getThreadFromSqlite(Context context, String tId)}}\\
-Get a single thread from SQLite database.
+Returns a single thread from SQLite database as a BlubbThread object.
 
 \item{\code{createThread(Context context, String tTitle, String tDescription)}}\\
-Creates a new Thread at beap. If everything goes well the thread will be added to the SQLite database and the whole new BlubbThread object will be returned.
+Creates a new Thread at the \beapDB{}. The thread will be added to the SQLite database and the new BlubbThread object will be returned.
 
 \item{\code{readingThread(Context context, String threadId)}}\\
-Call this if a thread is shown on the user interface and the thread is not longer a new one.
+Sets the 'isNew' tag of a thread to 'false' and updates the SQLite database.
 
 \item{\code{setThread(Context context, BlubbThread thread)}}\\
-Updates the thread at beapDB and the sqlite database.
+Updates the thread at \beapDB{} and the SQLite database.
 
 \end{itemize}
 
-
 \subsection{MessageManager}
-Like the ThreadManager the MessageManager manages all concerns about the messages. It is the link between the data storage, local and at the beap server and the user interface. Through the following methods it can provide this service.
+Like the ThreadManager for threads, the MessageManager manages all concerns about messages. It is the link between the data storage, local and at the \beapServer{} and the user interface. Through the following methods it provides this service:
 \begin{itemize}
 \item{\code{getNewMessagesFromAllThreads(Context context)}}\\
-Get all messages from all threads where isNew is true. The message count of all local and all threads on beapDB are compared, when there is a difference on a thread getNewMsgsForThread(..) will be called and all new messages for a thread added to the returning list.
+Returns a list of BlubbMessages of all messages from all threads with the 'isNew' set to 'true'. 
 
 \item{\code{createMsg(Context context, String... messageParameter)}}\\
- Creates a new message on the beapDB, on a positive response the message will be added to the SQLite database.
+ Creates a new message at the \beapDB{}. If the task has been executed successful, the message will be added to the SQLite database as well.
      
 \item{\code{getAllMessagesForThread(Context context, String tId)}}\\
-Get all messages for a thread.
+Returns a list of all messages for one thread.
 
 \item{\code{getAllMessagesForThreadFromBeap(Context context, String tId)}}\\
-Get all messages for a thread from beapDB.
+Returns a list of all messages for a thread from the \beapDB{}.
 
 \item{\code{putMessageToSqliteFromBeap(Context context, BlubbMessage message)}}\\
- Put a message to the SQLite database. If the db contains a message with the same id it will be updated otherwise it will be added.
+ Puts a message to the SQLite database. If the database contains a message with the same message ID it will be updated otherwise it will be added.
      
 \item{\code{getAllMessagesForThreadFromSqlite(Context context, String tId)}}\\
-Get all messages for a thread, stored in the local SQLite database.
+Returns a list of all messages for a thread, stored in the local SQLite database.
 
 \item{\code{setMsg(Context context, BlubbMessage message)}}\\
-Changes a message at beapDB and the local SQLite database.
+Changes a message at the \beapDB{} and the SQLite database.
 \end{itemize}
 
 \section{View or Front end}
 
 \subsection{Basics}
-In android the visualization made in activities. They provide a screen with which users can interact in order to do something\citep{aDefActivities}.\\
- Different layout types provide different structures for the screen layout, e.g. a LinearLayout orders its'  children in a linear structure, either vertically or horizontally. A RelativeLayout for example will order them relatively to each other. \\
- The children of these layouts can be even layouts or views. Android provides many Views. TextViews to display text, ImageViews for images, Buttons and many more. The Views are Items at the screen the user actually sees and interacts with.\\
-The user interface of \appname mostly uses TextViews, EditTexts and Buttons. TextViews only show text. The user can not interact with the text. Therefore a special kind of TextView, the EditText is made for. Buttons also are just a specialized TextView, mostly different in its appearance. \\
-It is possible to define the user interface programmatically or with XML files. The android framework provides the possibility to use either or both. For \appname mainly the xml files came to use. 
-When developing an application for android it is important to consider the activities life cycles. See figure~\ref{fig:activitylivecycle}.
+In android the user interface is realized by different Activities. They provide a screen with which users can interact in order to do something\citep{aDefActivities}.
+
+
+ Different Layout types provide different structures for the screen layout, e.g. a LinearLayout orders its  children in a linear structure, either vertically or horizontally. A RelativeLayout will order its children relatively to each other, e.g. the second child on the right side of the first.
+ 
+ The children of these Layouts can be Views, ViewGroups or Layouts. Android provides a collection of both View and ViewGroup subclasses \citep{aDefUIOV}, like TextViews, ImageViews, Buttons and many more. The Views are Items at the screen the user actually sees and interacts with. ViewGroups hold other Views in order to define the layout of the interface. All Layouts inherit from ViewGroup.
+ 
+The UI of \appname{} mostly uses TextViews, EditTexts and Buttons. TextViews only show text. The user can not interact with the text. For this, a special kind of TextView, the EditText is made for. Buttons also are just a specialized TextView, mostly different in its appearance. 
+
+
+It is possible to define the user interface programmatically or in XML files. The android framework provides the possibility to use either or both. For \appname{} mainly the XML files are used. 
+When developing an application for android it is important to consider the Activities life cycles. Figure \ref{fig:activitylivecycle} shows this life cycle.
  
 \begin{figure}[!ht]
     \includegraphics[width=\linewidth]{activity_lifecycle.png}
@@ -809,34 +844,35 @@ When developing an application for android it is important to consider the activ
 	\label{fig:activitylivecycle}
 \end{figure}
 
-Usually in \code{onCreate()} the content view for the activity is set, that is, the UI layout is placed in the window of the activity. Other actions, e.g. saving the current state of the application, should be considered at the appropriate life time events.
+Usually in \code{onCreate()} the content view for the activity is set. That is, the UI layout is placed in the window of the Activity. Other actions, e.g. saving the current state of the application, should be considered at the appropriate life time events.
+
 \subsection{ActivityThreads}
 At the start of the application the first activity is the ActivityThreads.
-purpose is to display all available threads. Three different thread types , admin thread, PL thread and user thread, see permissions.
-Regular view of threads just status and type, title, author and msgcounter. Extended view shows additionally date, description and if the current user has the permission the edit button.
-The user can perform following actions at the ActivityThreads:
+Its main purpose is to display all available threads. 
+But it also acts as the center of the application, since all navigation goes through it.
+At the ActivityThreads the user can perform the following actions :
 
 \begin{itemize}
 \item{Create a new thread.}\\
 By clicking on 'New thread' in the menu the user opens a dialog where he can enter the title and description and create a new thread.
 
 \item{Refresh the list of threads.}\\
-This option in the menu will reload the threads from the beap server and update the SQLite database and the ListView with threads.
+This option in the menu will reload the threads from the \beapDB{}, update the SQLite database and the thread list in the Activity.
 
 \item{Go to the Settings screen.}\\
 The ActivitySettings will start when the user clicked 'Settings' in the menu.
 
 \item{Go to the Login screen.}\\
-In case the user needs to manually log in he can start the ActivityLogin with the LoginType LOGIN, by clicking 'Login' in the menu. 
+In case the user needs to log in manually he can start the ActivityLogin with the LoginType LOGIN, by clicking 'Login' in the menu. 
 
 \item{Go to the reset password screen.}\\
 To reset the password the user opens the menu and clicks 'Reset password'. This will start the ActivityLogin with the LoginType RESET.
 
 \item{Log out.}\\
-If the user wants to log out he clicks 'Logout' in the menu. In case the password was stored in the Preferences it will be deleted. The Pull service will be stopped and the Application will be send to the background. Unfortunately it's not possible to close an application. This is reserved to the OS.
+If the user wants to log out of \appname{} he/she clicks 'Logout' in the menu. In case the password was stored in the SharedPreferences it will be deleted, the PullService will be stopped and the Application will be send to the background. Unfortunately it's not possible to close or kill an application. This is reserved to the android system.
 
 \item{Toggle the size of  a thread view.}\\
-A long click at one thread view will toggle it's size between the big view and the small one.
+A long click at one ThreadView will toggle its size between the big and the small view.
 
 \item{Modify a thread.}\\
 The user can modify his own threads by clicking at the 'EditButton', with the pencil icon. This will open a dialog window where the title, description and status can be changed.
@@ -850,80 +886,102 @@ If the list has more than 7 items the user needs to scroll to see all entries.
 \end{itemize} 
 
 \subsubsection{Start of the activity}
-When the ActivityThreads is started it will first check whether it's possible to log in at the beap server. If the username and password is not stored at the Shared Preferences it will check whether threads are available at the local SQLite database. In case neither a login is possible nor any threads are stored the ActivityLogin will be started. Otherwise the BlubbThreads are loaded form the SQLite database and displayed in the ListView of the activity. But if a automatic login is possible the BlubbThreads will be updated form beap and reload to the list.
+When the ActivityThreads is started it will first check whether it is possible to log in at the \beapServer{}. If the username and password is not stored at the SharedPreferences it will check whether threads are available at the local SQLite database. In case neither a login is possible nor any threads are stored the ActivityLogin will be started. Otherwise the BlubbThreads are loaded form the SQLite database and displayed in the ListView of the activity. But if a automatic login is possible the BlubbThreads will be updated form beap and reload to the list, see figure \ref{fig:ActivityThreadsLC}.
+
+\begin{figure}[!ht]
+    \includegraphics[width=\linewidth]{placeholder.png}
+	\caption{ActivityThreads life cycle} 
+	\label{fig:ActivityThreadsLC}
+\end{figure}
 
 \subsubsection{Layout structure}
 The Layout for the ActivityThreads is defined in \code{threads_activity_layout.xml}.
-this just defines the ListView for the threads, and a progressBar to show the loading process when a network action is performed. For a thread within the ListView two different Views are available. The small one (\code{thread_small_layout.xml}) shows only an icon, the title of the thread, who created it and how much messages it contains. Additionally the big view (\code{thread_big_layout.xml}) shows a date when the thread has been created, the role of the creator and the description. If the current user is the creator of this thread, a button will be shown, too. With it the user can open the edit thread dialog. \\
-Two dialog windows are also part of the ActivityThreads. With the create thread dialog (\code{create_thread_dialog.xml}) the user can open a thread for a new subject. Therefor he must enter the title and a description. To change this, e.g. because of a typo, the user can open the edit thread dialog (\code{edit_thread_dialog.xml}) and change it. With this he also can change the status of a thread. 
+It just defines the ListView for the threads, and a ProgressBar to show the loading process when a network action is performed. 
+
+For a thread within the ListView two different Views are available. The small one (\code{thread_small_layout.xml}) shows only an icon, the title of the thread, who created it and how much messages it contains. Additionally the big view (\code{thread_big_layout.xml}) shows a date when the thread has been created, the role of the creator and the description. If the current user is the creator of this thread, a button will be shown, too. With it the user can open the edit thread dialog. 
+
+
+Two dialog windows are also part of the ActivityThreads. With the CreateThreadDialog (\code{create_thread_dialog.xml}) the user can open a thread for a new subject. For this he/she must enter the title and a description. To change this, e.g. because of a typo, the user can open the EditThreadDialog, defined in (\code{edit_thread_dialog.xml}) and change it. With this the status of a thread can be changed, too.
+
+Figure \ref{fig:ActivityThreadsLayouts} shows all layouts that are part of the ActivityThreads.
 
 \begin{figure}[!ht]
 	\centering
     \includegraphics[width=\linewidth]{ActivityThreadsLayouts.png}
 	\caption{Layouts for the ActivityThrads.}
+	\label{fig:ActivityThreadsLayouts}
 \end{figure}
 
 
 \subsubsection{Menu}
-Most actions are accessed through the menu. The menu is a common user interface component, to provide a familiar and consistent user experience the Menu API is used to present actions and other options in activities\citep{aDefMenu}. Some devices have even a 'hard' button to access it. The menu itself is defined in a xml file. The menu for ActivityThreads is defined in \code{activity_threads_menu.xml} in the res/menu folder.
-Most actions a user can perform with this activity are accessed through the menu. The actions are defined in the \code{ActivityThreads.class} within the \code{onOptionsItemSelected()} method.
+Most actions a user can perform with the ActivityThreads are accessed through the Menu. The Menu is a common UI component, to provide a familiar and consistent user experience. In order to present actions and other options in Activities the Menu API is used \citep{aDefMenu}. Some devices even have a hardware button to access it. The menu for ActivityThreads is defined in \code{activity_threads_menu.xml}.
+ The actions for the menu items are determined in the \code{ActivityThreads.class} within the \code{onOptionsItemSelected()} method.
 
 \subsubsection{ListView, ArrayAdapter and ThreadViews}
-A ListView is a view group that displays a list of scrollable items\citep{aDefListView}. The items are loaded to the ListView via a ListAdapter. In case of the ActivityThreads, the ListAdapter is an ThreadArrayAdapter, extending a ArrayAdapter, containing a list of BlubbThread objects. The items for the ListView are provided by these objects. Should a object of its list be displayed the ThreadArrayAdapter calls \code{getView()} on it. Depending on the current state of the thread it will return a small or a big view. The threads have an OnClickListener and an OnLongClickListener, both given to it in the constructor of the ThreadArrayAdapter. On click on a thread view a new Intent will be constructed and the thread ID will be given as an extra to it. The Intent will start a ActivityMessages for the clicked thread.\\
-On a long click the view will change its size or switch from its layout between \code{thread_small_layout.xml} and \code{thread_big_layout.xml}. A button on the big layout will start the edit thread dialog.\\
+A ListView is a ViewGroup that displays a list of scrollable items\citep{aDefListView}. The items are loaded to the ListView via a ListAdapter. In case of the ActivityThreads, the ListAdapter is an ThreadArrayAdapter, inheriting a ArrayAdapter and containing a list of BlubbThread objects. The items for the ListView are provided by these objects. Needs a object of its list to be displayed, the ThreadArrayAdapter calls \code{getView()} on it. Depending on the current state of the thread it will return a small or a big View object. 
+
+Each thread has an OnClickListener and an OnLongClickListener, both given to it in the constructor of the ThreadArrayAdapter. A click on a thread view creates a new Intent.  The Intent starts an ActivityMessages for the clicked thread. To load the right messages the ActivityMessages needs the thread ID as an Extra in the Intent. The name of that Extra is declared in the constant \code{ActivityMessages.EXTRA_THREAD_ID}.\\
+
+
+A long click on the view will change its size by switching its layout between \code{thread_small_layout.xml} and \code{thread_big_layout.xml}. A button on the big layout starts the EditThreadDialog.\\
 
 \subsubsection{Create thread and edit thread dialogues}
-To create a new thread the user has to enter the title and a description in a dialog window. The layout for the create thread dialog is defined in \code{create_thread_dialog.xml}. It consists of two LinearLayouts. The first contains a TextView for the dialog title, two EditTexts for entering the title and description for the thread. Two buttons are in the second. The green one to create with the entries of the two EditTexts a new thread the other to cancel the dialog window. When the user clicks the green button a new AsyncNewThread will be created and executed. See \ref{subsubsec:AsyncNewThread}. To start a create thread dialog \code{newThreadDialog()} must be called from within an ActivityThreads object.
-The dialog to modify a thread is similar build like the dialog to create a new thread. Except that between the two buttons lays a Spinner containing the different statuses for the thread. A Spinner is an android equivalent for a drop-down list or combo box. The user can select one of three predefined items. For the status they are:
+To create a new thread the user has to enter the title and a description in a CreateThreadDialog. The layout for is defined in \code{create_thread_dialog.xml}. It consists of two LinearLayouts. The first contains a TextView for the dialog title, two EditTexts for entering the title and description for the thread. Two buttons are in the second LinearLayout. The green Button is to create a new thread with the entries of the two EditTexts. The red Button cancels the dialog window.
+
+When the user clicks the green button a new AsyncNewThread will be created and executed. For details see \ref{subsubsec:AsyncNewThread}. \code{newThreadDialog()} starts a CreateThreadDialog and must be called from within an ActivityThreads object.
+The dialog to modify a thread is similar build like the dialog to create a new thread. Except that between the two buttons lays a Spinner, containing the different statuses for the thread. A Spinner is an android equivalent for a drop-down list or combo box. The user can select one of three predefined items. For the status they are:
 \begin{itemize}
 \item OPEN
 \item SOLVED
 \item CANCELED
 \end{itemize}
-If the user hits the green button on this dialog an AsyncSetThread will be executed. For details see section \ref{subsubsec:AsyncSetThread}. The dialog window will start if \code{editThreadDialog()} is called from within an ActivityThreads object.
+
+
+If the user hits the green button on this dialog an AsyncSetThread will be executed. For details see section \ref{subsubsec:AsyncSetThread}. The EditThreadDialog starts if \code{editThreadDialog()} is called from within an ActivityThreads object.
 
 \subsection{ActivityMessages}
-The ActivityMessages will start when the user clicks on one thread in the ActivityThread. It's purpose is to show all messages belonging to the clicked thread. The appearance of a message depends on who has created it and whether it is new or has been loaded previously. The user can perform different actions in this activity:
+The ActivityMessages will start when the user clicks on one thread in the ActivityThreads. Its purpose is to show all messages belonging to the clicked thread. The appearance of a message depends on who has created it and whether it is new or has been loaded previously. The user can perform different actions in this activity:
+
 \begin{itemize}
 \item Write a new message.\\
-Clicking in the EditText on the bottom of the activity will open the soft keyboard. Alternatively this can also be achieved by clicking 'New message' in the menu of the activity. After entering a text the message can be sent by clicking the green button on the right side of the EditText.
+Clicking in the EditText on the bottom of the activity will open the soft keyboard. Alternatively this can also be achieved by clicking 'New message' in the menu of the activity. After entering a text, the message can be sent by clicking the green button on the right side of the EditText. An AsyncSendMessage uses the MessageManager to send the message.
 
 \item Refresh the list with messages.\\
-This action can be accessed through the menu. It will reload the messages from beap and if new messages are available show them on top of the ListView.
+This action can be accessed through the Menu. It will reload the messages from the \beapDB{} with an AsyncGetAllMessagesToThread and if new messages are available show them on top of the ListView.
 
 \item Reply to a message.\\
-Every message has a small button to reply to it. Like when writing a new message this starts the soft keyboard and works the same way as writing a new message but will be send as a reply.
+Every message has a small button to reply to it. Like when writing a new message, this starts the soft keyboard and works the same way as writing a new message but will be send as a reply. The AsyncSendMessage is used to do this, too.
 
 \item Edit a message.\\
-The user can modify own messages by clicking the edit button besides the reply button. The current content of the message will be set to the EditText and be editable for the user. Clicking the green button, again will send the content of the EditText. 
+The user can modify own messages by clicking the edit button besides the reply button. The current content of the message will be set to the EditText and be editable for the user. Clicking the green button, will send the content of the EditText with an AsyncSetMessage.
 
 \end{itemize}
 
 \subsubsection{Start of the ActivityMessages}
-It is important to add a thread ID as an extra to the Intent that starts the ActivityMessages. With this ID the messages can be requested form the SQLite database and the beapDB. On start of the activity it will first prepare the message ListView with a header containing the thread's title, creator and description. The layout for the header is defined in \code{messages_activity_lv_header.xml}. It will also start the InputView, so the user can enter messages. After that the messages are loaded from the SQLite database and then from the beapDB. In this way the user sees most messages immediately and the new just pop up. 
+It is important to add a thread ID as an Extra to the Intent that starts the ActivityMessages. With this ID the messages can be requested form the SQLite database and the \beapDB{}. On start of the activity it will first prepare the message ListView with a header containing the threads title, creator and description. The layout for the header is defined in \code{messages_activity_lv_header.xml}. It will also start the InputView, so the user can enter messages. After that the messages are loaded from the SQLite database and then from the \beapDB{}. In this way the user sees most messages immediately and the new just pop up when the used AsyncGetAllMessagesToThread has finished its task. 
 
 \subsubsection{Layout structure}
-The file \code{activity_messages_layout.xml} defines the layout for the ActivityMessages. Like the ActivityThreads it contains a ListView and a ProgressBar. The ListView shows the messages and the Progressbar indicates that a background process is in progress. On the bottom of the activity's window the InputView supplements the layout. Here can the user enter and send new messages. It consists of an EditText and a Button. For instance a new message can be entered to the EditText and be sent by clicking the Button. 
-The InputView is used to write a new, modify or reply to an existing message. The different modes are set up by the methods \code{startInputView()}, \code{ replyToMessage()} and \code{changeMessage()} in the ActivityMessages.
-From the menu the user can refresh the messages and start the creating of a new one. \\
-
-
+The file \code{activity_messages_layout.xml} defines the layout for the ActivityMessages. Like the ActivityThreads it contains a ListView and a ProgressBar. The ListView shows the messages and the ProgressBar indicates that a background process is in progress. On the bottom of the activity window the InputView supplements the layout. Here the user enters and sends new messages. It consists of an EditText and a Button. For instance a new message can be entered to the EditText and be sent by clicking the Button. 
+The InputView is used to write a new, modify or reply to an existing message. For this it has different modes that are set up by the methods \code{startInputView()}, \code{ replyToMessage()} and \code{changeMessage()} in the ActivityMessages.
+From the Menu the user can refresh the messages and start the creating of a new one. \\
 
 The ListView of the ActivityMessage is populated with MessageViews through a MessageArrayAdapter inheriting from the ArrayAdapter class. 
-In its constructor it expects a list of BlubbMessages. To get the view for a message the MessageArrayAdapter just invokes \code{getView()} on the corresponding object of this list. 
+In its constructor it expects a list of BlubbMessages. To get the View for a message the MessageArrayAdapter just invokes \code{getView()} on the corresponding object of this list. 
 
 \subsubsection{Menu}
-The menu at the ActionBar of a ActivityMessages has only two items, one to set up the InputView for creating a new message, the other just to reload the messages from the beap server. Clicking the item 'Create a new message' will simply call \code{startInputView()}, which sets up the InputView properly. 'Refresh' executes an AsyncGetAllMessagesToThread, for details see section  \ref{subsubsec:AsyncGetAllMessagesToThread}.
+The menu at the ActionBar of a ActivityMessages has only two items. One to sets up the InputView for creating a new message, the other just to reloads the messages from the \beapServer{}. Clicking the item 'Create a new message' will simply call \code{startInputView()}, which sets up the InputView properly. 'Refresh' executes an AsyncGetAllMessagesToThread, for details see section  \ref{subsubsec:AsyncGetAllMessagesToThread}.
 
 \subsection{ActivityLogin}
-Only registered user can access the beapDB. Therefor they get a username and a password. With these can the user perform a login in the ActivityLogin. This activity has two different modes. One for a regular login the other to reset the password. The mode is triggered by an extra contained in the starting Intent. This extra is a LoginType and can be accessed like shown in listing \ref{lst:LoginType}. The constant \code{EXTRA_LOGIN_TYPE} holds the name needed to access the extra in the Intent.
+Only registered user can access the \beapDB{}. For this they get a username and a password. With these can the user perform a login in the ActivityLogin. This Activity has two different modes. One for a regular login the other to reset the password. The mode is triggered by an Extra contained in the starting Intent. This Extra is a LoginType and can be accessed like shown in listing \ref{lst:LoginType}. The constant \code{EXTRA_LOGIN_TYPE} holds the name needed to access the extra in the Intent.
 \lstset{language=java}
 \begin{lstlisting}[caption=Accessing the LoginType., label=lst:LoginType]
 	Intent intent = getIntent();
     LoginType loginType = (LoginType)intent.getSerializableExtra(EXTRA_LOGIN_TYPE);
 \end{lstlisting}
 
-LOGIN is the standard LoginType. If the user enters a valid username and password and clicks the LoginButton he will be send to the ActivityThreads. Was the AcitvityLogin started with the LoginType RESET, the user can enter the username, password, new password and the new password again to detect typos early. Clicking the LoginButton will then reset the password and redirect to the ActivityLogin for a regular login. 
+LOGIN is the standard LoginType. If the user enters a valid username and password and clicks the LoginButton it will perform a login and start the ActivityThreads. 
+
+Was the AcitvityLogin started with the LoginType RESET, the user can enter the username, password, a new password and the new password again to detect typos early. Clicking the LoginButton will then reset the password and redirect to the ActivityLogin for a regular login. 
 
 The very first login is a special case. At this point the user has not yet chosen an own password. 'init' is the standard password and must be reset. If the user sends a login with the init password a dialog window will pop up in which the password must be reset. 
 
@@ -935,58 +993,62 @@ Compared to the ActivityThreads or ActivityMessages the layout of ActivityLogin 
 ImageView which shows the logo and name for the application.
 
 \item \code{login_activity_username_et}\\
-The EditText where the user must enter the username.
+The EditText where the user enters the username.
 
 \item \code{login_activity_password_et}\\
 The EditText for the current password.
 
 \item \code{login_activity_password_reset_et}\\
-EditText for a new password, when resetting it. Only visible when the LoginType is LOGIN.
+EditText for a new password, when resetting it. Only visible when the LoginType is RESET.
 
 \item \code{login_acitivity_password_reset_confirm_et}\\
-In this EditText the user must enter the same as in \code{login_activity_password_reset_et} to avoid typos. It will also be visible only when the LoginType is RESET.
+In this EditText the user must enter the same as in
+
+\code{login_activity_password_reset_et} to avoid typos. It will also be visible only when the LoginType is RESET.
 
 \item \code{login_activity_login_btn}\\
-The text on the LoginButton depends on the LoginType. For LOGIN it will be 'Sign in', for RESET 'Reset password'. In LOGIN mode it will start an AsyncLogin, in RESET an AsyncResetPassword. See section \ref{subsec:AsyncLogin} for details to this AsyncTasks.
+The text on the LoginButton depends on the LoginType. For LOGIN it is 'Sign in', for RESET 'Reset password'. In LOGIN mode it will start an AsyncLogin, in RESET mode an AsyncResetPassword. See section \ref{subsec:AsyncLogin} for details to this AsyncTasks.
 
 \item \code{login_activity_stayloggedin_cb}\\
-If this CheckBox is checked when the user clicks the LoginButton, the username and password will be stored in the shared preferences. This enables an automated login, so the user must not be bothered on every start of the application.
+If this CheckBox is checked when the user clicks the LoginButton, the username and password will be stored in the shared preferences. This enables an automated login, so the user must not be bothered with the login process on every start of the application.
 \end{itemize}
 
 The file \code{login_activity_layout.xml} contains the layout for the LoginActivity. 
 
-The InitDialog is defined in the file \code{password_init_dialog.xml}. Like the ActivityLogin it contains 4 EditTexts for username, password, new password and the confirmation of the new password. Since the user already has entered the username and the init password this fields will be filled in advance. The green button will start a AsyncResetPassword, the red will cancel the dialog. 
+The InitDialog is defined in the file \code{password_init_dialog.xml}. Like the ActivityLogin it contains 4 EditTexts for username, password, new password and the confirmation of the new password. Since the user already has entered the username and the init password this fields will be filled in advance. The green Button starts a AsyncResetPassword, the red Button cancels the dialog. 
 
-\subsection{Notifications}
+\subsection{Notifications} \label{subsec:notifications}
 A notification is a message you can display to the user outside of your application's normal UI. When you tell the system to issue a notification, it first appears as an icon in the notification area. To see the details of the notification, the user opens the notification drawer. Both the notification area and the notification drawer are system-controlled areas that the user can view at any time \citep{aDefNotifications}.
-For \appname  the notifications are used to show new messages or new threads. A background service, the PullService, is responsible for publishing these notifications. It is started by an AlarmService provided form the android system and only starts an AsyncQuickCheck. This performs a quick check at the SessionManager. If the returned QuickCheck object contains any results they will be published as notifications, like in figure \ref{fig:notifications}
+For \appname{} the notifications are used to show new messages or new threads. A background service, the PullService, is responsible for publishing these notifications. It is started by an AlarmService provided form the android system and only starts an AsyncQuickCheck. This performs a quickCheck at the SessionManager. If the returned QuickCheck object contains any results they will be published as notifications and will look like in figure \ref{fig:notifications}
 
 \begin{figure}[!ht]
     \includegraphics[width=\linewidth]{Notification.png}
-	\caption{Notifications from \appname} 
+	\caption{Notifications from \appname{}} 
 	\label{fig:notifications}
 \end{figure}
 
 A click on a notification in the notification drawer will open either the ActivityThreads or the ActivityMessages. If there is one new message the ActivityMessages will open for the corresponding thread. For more than one message or a thread notification the ActivityThreads will be started.
 
-The PullService only can perform a quick check when the user has accepted to stay logged in in the ActivityLogin otherwise the mandatory login is not possible.
+The PullService only can perform a quickCheck when the user has accepted to stay logged in in the ActivityLogin, otherwise the mandatory login is not possible.
 
-\section{Asynchronous tasks}
+\section{Asynchronous tasks} \label{sec:AsyncTasks}
 \subsubsection{AsyncTasks}
-Tasks like network operations should not be executed on the UI thread (in this subsection a thread means the java.lang.Thread). They probably take some seconds to finish and would block the user interface meanwhile. So it is recommended to run long lasting jobs on a background thread. 
+Tasks like network operations should not be executed on the UI thread (java.lang.Thread). They probably take some seconds to finish and would block the user interface meanwhile. So it is recommended to run long lasting jobs on a background thread. 
 Android provides different mechanisms for running a task in the background.
-Services are meant for long lasting tasks and are not affected by the lifecycle events of an activity. But they can't interact directly with the UI. \\
-\appname  is mostly considered to display content provided by the beap server. Therefor many requests are send by the UI. For instance the creation of a new thread. A service could execute the request but the updating of the user interface would be tricky. The abstract class AsyncTask enables proper and easy use of the UI thread. This class allows to perform background operations and publish results on the UI thread without having to manipulate threads or handlers\citep{aDefAsyncTask}
+Services are meant for long lasting tasks and are not affected by the life cycle events of an activity. But they can't interact directly with the UI. \\
+\appname{} is mostly considered to display content provided by the \beapDB{}. Therefor many requests are send by the UI. For instance the creation of a new thread must be send to beap. A service could execute the request but the updating of the user interface would be tricky. The abstract class AsyncTask enables proper and easy use of the UI thread. This class allows to perform background operations and publish results on the UI thread without having to manipulate threads or handlers\citep{aDefAsyncTask}.
 There are two rules for background threads
 \citep{aDefProcThreads}:
 \begin{enumerate}
 	\item Do not block the UI thread
 	\item Do not access the Android UI toolkit from outside the UI thread
 \end{enumerate}
-With AsyncTask both can be met easily. Therefor all network operations at \appname  run on them. All AsyncTasks are inner classes of an activity. They extend the class AsyncTask and must implement the \code{doInBackgroud()} method, which will run on the background thread. The result of it is delivered to \code{onPostExecute()}. Since this runs on the UI thread, it is easy to publish the results. In the following section all AsyncTasks are explained.
+With AsyncTask both can be met easily. Therefor all network operations at \appname{} run on them. All AsyncTasks are inner classes of an Activity. They extend the class AsyncTask and must implement the \code{doInBackgroud()} method, which will run on the background thread. The result of it is delivered to \code{onPostExecute()}. Since this runs on the UI thread, it is easy to show the results. In this section all AsyncTasks of \appname{} are explained.
 
 \subsubsection{Exceptions in AsyncTasks}
-AsyncTasks miss a proper way of exception handling. There is no build in mechanism to transfer exceptions form a background to the main thread. To maintain this matter the asyncTask classes have all a field for a BlubbException. All custom exeptions in \appname  inherit from BlubbException. In case a excetpion is thrown in \code{doInBackgroud}, it must be caught and set to this field. The handling of it can then take place in \code{onPostExecute}, see listing \ref{lst:Exception}.
+AsyncTasks miss a proper way of exception handling. There is no build in mechanism to transfer exceptions form a background to the main thread. But this is important to show any message about a malfunction on the UI.
+
+ To maintain this matter the AsyncTask classes of \appname{} have a field for a BlubbException. All custom Exeptions inherit from BlubbException. In case a Excetpion is thrown in \code{doInBackgroud}, it must be caught and set to this field. The handling of it can then take place in \code{onPostExecute}, see listing \ref{lst:Exception}.
 
 \begin{lstlisting}[caption=Exception handling in AsyncTasks, label=lst:Exception]
 private class AsyncNewThread extends AsyncTask<String, Void, BlubbThread> {
@@ -1015,14 +1077,15 @@ private class AsyncNewThread extends AsyncTask<String, Void, BlubbThread> {
         }
 	}
 \end{lstlisting}
-Mostly the exceptions are forwarded to the BlubbApplication. This will show a Toast message according to which type of exception it was. The text for each message is defined in the file \code{res/values/strings.xml}.
+
+Mostly the Exceptions are forwarded to the BlubbApplication. This will show a Toast message according to the type of Exception. The text for each message is defined in the file \code{res/values/strings.xml}.
 
 \subsection{AsyncTasks of the ActivityThreads}
 
 \subsubsection{AsyncUpdateThreads}
 \label{AsyncUpdateThreads}
 
-If the threads need to be updated from the beapDB a AsyncUpdateThreads will call \code{updateAllThreadsFromBeap(..)} at the ThreadManager. The threads table at the SQLite database will then be updated with the threads from the beapDB. When they have been updated the ListView in the ThreadsActivity gets all threads from the SQLite database to display them.
+If the threads need to be updated from the \beapDB{} a AsyncUpdateThreads will call \code{updateAllThreadsFromBeap(..)} at the ThreadManager. The threads table at the SQLite database will then be updated with the threads from the beapDB. When they have been updated the ListView in the ThreadsActivity gets all threads from the SQLite database to display them.
 Since the AsyncUpdateThreads needs no parameter it can simply been instantiated and executed, like shown in listing \ref{lst:AsyncUpdateThreads}
 
 \begin{lstlisting}[caption=AsyncUpdateThreads, label=lst:AsyncUpdateThreads]
@@ -1034,17 +1097,16 @@ Since the AsyncUpdateThreads needs no parameter it can simply been instantiated 
 
 \subsubsection{AsyncCheckLogin}
 \label{AsyncCheckLogin}
-
 At the start of the application it is necessary to check whether it is possible to log in automatically.
 Therefor an AsyncCheckLogin is executed. It does not need any parameter since it tries to log in with the saved username and password in the Shared Preferences. 
 The task is executed by calling \code{getSessionID(..)} at the SessionManager.
 
 
-If it is possible to log in the threads will be updated and reload to the thread ListView. If not, the thread list is loaded immediately from the SQLite database. In case the thread list from the database is empty, the user logs in the first time and the ActivityLogin will be started.
+If it is possible to log in the threads will be updated and reload to the thread ListView. If not, the thread list is loaded immediately from the SQLite database. In case the thread list from the database is empty, this must be the first login of the user and the ActivityLogin will be started.
 
 \subsubsection{AsyncNewThread}
 \label{subsubsec:AsyncNewThread}
-A new thread must have a title and a description. Therefor the AsyncNewThread receives to string arguments in its \code{execute()} method. Like shown in listing \ref{lst:AsyncNewThread} the first is the title the second the description. 
+A new thread must have a title and a description. Therefor the AsyncNewThread receives to string arguments in its \code{execute()} method. Like shown in listing \ref{lst:AsyncNewThread}. The first parameter is the title, the second the description. 
 \lstset{language=java}
 \begin{lstlisting}[caption=AsyncNewThread example, label=lst:AsyncNewThread]
 	...
@@ -1056,8 +1118,7 @@ A new thread must have a title and a description. Therefor the AsyncNewThread re
 \end{lstlisting}
 The creation of the new thread will be made by the ThreadManager with the method \code{createThread(...)}.
 
-
-After finishing the execution the application will display a short message to inform the user about the successfully accomplished task. The ListView for the threads will be updated so the new thread is shown.
+After finishing the execution, the application will display a short message to inform the user about the successfully accomplished task. The ListView for the threads will be updated so the new thread is shown, too.
 
 \subsubsection{AsyncSetThread}
 \label{subsubsec:AsyncSetThread}
@@ -1071,14 +1132,14 @@ To modify a thread a AsyncSetThread is needed. It receives a BlubbThread object,
 	asyncSetThread.execute();
 	...
 \end{lstlisting}
-Like the creation of a thread the modification will be executed by the ThreadManager. The AsyncSetThread simply calls \code{setThread(..)} on an instance of it.
+Like the creation of a thread the modification will be executed by the ThreadManager. The AsyncSetThread simply calls \code{setThread(..)} on the instance of it.
 
 If the modification of the thread was successful a Toast informs the user about it and the currently displayed threads will be updated.
 
 \subsection{AsyncTasks of the AcitvityMessages}
 
 \subsubsection{AsyncGetAllMessagesToThread} \label{subsubsec:AsyncGetAllMessagesToThread}
-With a AsyncGetAllMessagesToThread the messages can be updated from the beapDB and shown on the UI in the ActivityMessages. In the background thread it simply calls \code{getAllMessagesForThread()} on the MessageManager. A string containing the thread ID is the only argument needed and is given to the AsyncTask in the constructor. Listing \ref{lst:AsyncGetAllMsgs} shows an example, how to use an AsyncGetAllMessagesToThread.
+With a AsyncGetAllMessagesToThread the messages can be updated from the \beapDB{} and shown on the UI in the ActivityMessages. In the background thread it simply calls \code{getAllMessagesForThread()} on the MessageManager. A string containing the thread ID is the only argument needed and is given to this AsyncTask in the constructor. Listing \ref{lst:AsyncGetAllMsgs} shows an example, how to use an AsyncGetAllMessagesToThread.
 \begin{lstlisting}[caption=AsyncGetAllMessagesToThread example, label=lst:AsyncGetAllMsgs]
 	...
 	String threadID = "t2014-07-03_165629_B-Richter";
@@ -1090,7 +1151,7 @@ With a AsyncGetAllMessagesToThread the messages can be updated from the beapDB a
 After executing the task it will update the MessageArrayAdapter in the ActivityMessages.
 
 \subsubsection{AsyncSendMessage}
-An AsyncSendMessage is used to create new messages. The arguments therefor are Strings with the thread ID, the message title, content and if it is a reply a message ID. The listing \ref{lst:AsyncSendMsg} shows an example how to use an AsyncSendMessage.
+An AsyncSendMessage is used to create new messages. The arguments for this are Strings with the thread ID, the message title, the content and if it is a reply, a message ID. An example how to use AsyncSendMessage is shown in listing \ref{lst:AsyncSendMsg}.
 
 \begin{lstlisting}[caption=AsyncSendMessage example, label=lst:AsyncSendMsg]
 	...
@@ -1107,47 +1168,163 @@ An AsyncSendMessage is used to create new messages. The arguments therefor are S
 When the new message has been created the AsyncSendMessage will update the ListView in the ActivityMessages through the MessageArrayAdapter and show the new message on top of the list.
 
 \subsubsection{AsyncSetMessage}
-The AsyncSetMessage will update an existing message at the beapDB as well as at the SQLite database. It works pretty much like the AsyncSendMessage, except that the only argument is the modified BlubbMessage object. 
+The AsyncSetMessage will update an existing message at the \beapDB{} as well as at the SQLite database. It works pretty much like the AsyncSendMessage, except that the only argument is the modified BlubbMessage object. 
 
 \subsection{AsyncTasks of the ActivityLogin}\label{subsec:AsyncLogin}
 \subsubsection{AsyncLogin}
-An AsyncLogin will perform a login at the beap server and store the SessionInfo in the SessionManager, so all requests at the beapDB can use the session ID to verify the identity of the user. To execute a login a String with the username and one with the password is needed as arguments in the \code{execute()} method.
-After a successful login the ActivityThreads will be started and if the user has checked the CheckBox the username and password will be stored in the shared preferences. If a PasswordInitException has been caught, the password init dialog will be started by calling \code{showPasswordInitDialog()} of the current ActivityLogin. 
-\subsubsection{AsyncResetPassword}
-With a AsyncResetPassword object the password of a user can be reset. It needs four Strings as arguments in the \code{execute()} method, the username, old password, new password and the new password again to confirm it. After it has finished its task, it will start the ActivityLogin with the LoginType LOGIN. So if the user has entered a wrong new password this will be recognized immediately. Has a init password dialog started the task, it will be closed.
+An AsyncLogin will perform a login at the \beapServer{} and store the SessionInfo in the SessionManager, so all requests to the \beapDB{} can use the session ID to verify the identity of the user. To execute a login a string with the username and one with the password is needed as arguments in the \code{execute()} method.
+After a successful login the ActivityThreads will be started and if the user has checked the CheckBox the username and password will be stored in the SharedPreferences. If a PasswordInitException has been caught, the password init dialog will be started by calling \code{showPasswordInitDialog()} of the current ActivityLogin. 
 
-\section{Manifest}
+\subsubsection{AsyncResetPassword}
+With a AsyncResetPassword object the password of a user can be reset. It needs four strings as arguments in the \code{execute()} method, the username, old password, new password and the new password again to confirm it. After it has finished its task, it will start the ActivityLogin with the LoginType LOGIN. So if the user has entered a wrong new password this will be recognized immediately. Has a init password dialog started the AsyncResetPassword, it will be closed.
+
+\section{Android Manifest}
 Every application must have an \code{AndroidManifest.xml} file (with precisely that name) in its root directory. The manifest file presents essential information about an app to the Android system \citep{aDefManifest}.
-In \appname  the manifest declares the ActivityThread as the main activity, the activities ActivityLogin, ActivityMessages and ActivitySettings. The PullService is also defined in the manifest. Since the app uses a custom Application class this is stated within the application tag.
-The permissions needed for the app are the 'internet' and 'vibrate' permissions. Of course is a network access mandatory to communicate with others and the vibration of the android device is used to inform the user about new messages.
+In \appname{} the manifest declares the ActivityThread as the main activity and the activities ActivityLogin, ActivityMessages and ActivitySettings. The PullService is also defined in the manifest. Since the app uses a custom Application class this is stated within the application tag.\\
+
+To make use of protected features of an android device, \code{<uses-permission>} tags declaring the permissions must included in the \code{AndroidManifest.xml} \citep{aDefPermissions}.
+
+The permissions needed for the app are the 'internet' and 'vibrate'. Of course is a network access mandatory to communicate with others and the vibration of the android device is used to inform the user about new messages. 
 
 \chapter{User documentation}
 
-\section{Thread overview}
+\section{Basics}
+\subsection{What is blubb?}
+Blubb stands for \beap{} lightweight user bulletin board. It is meant to be an application to manage the communication within small projects. In the moment it consists only of an android app but a web app will follow soon. With the app you can write messages in different threads and create new threads about a subject. 
 
-\subsection{Show Threads}
-blubb
-\subsection{Thread details}
+With \appname{} you do not have to worry about your data since it runs on a server of your company. 
 
-\subsection{Create a new thread}
+\subsection{How to install the \appname{} app on your android device.}
 
-\subsection{Modify thread title and description}
+The \appname{} is not available in an appstore. But it is easy to install it manually:
+\begin{enumerate}
+\item Copy the blubb.apk file to the internal or external storage of your device.
+\begin{figure}[!ht]
+    \includegraphics[width=\linewidth]{CopyApk.png}
+\end{figure}
+\item Open it with a file manager software on your device.
+\item Click on the 'Install' button on the bottom of your screen. Now \appname{} will be installed.
 
-\section{Thread messages}
+\begin{figure}[!ht]
+    \includegraphics[width=\linewidth]{InstallApp.png}
+\end{figure}
 
-\subsection{Show messages for a thread}
+\item After the app has been installed you can start it by clicking 'Open'.
 
-\subsection{Write a new message}
 
-\subsection{Modify a message}
+\begin{figure}[!ht]
+    \includegraphics[width=\linewidth]{AppInstalled.png}
+\end{figure}
 
-\subsection{Reply to a message}
+\end{enumerate}
 
-\subsection{Read replies}
+\section{Login}
+\subsubsection{Why is the login needed?}
+The login is needed to identify the user of the \appname{} app. Otherwise it would not be possible to know who wrote a message or opened a thread. In this way you can recognize the author of a message.
+
+\subsubsection{How to login.}
+If you have received an username from your admin you can use the \appname{} app. If this is the first time you use it, you must initialize your own password first. For details to the first login see section \ref{subsubsec:init}.
+
+Now just enter your username and password and click the button saying 'Sign in'. If the username and password were correct the thread overview will start and show you all available threads. Otherwise you will see a message telling you that something was wrong and you need to sign in again.
+
+\subsubsection{Why stay logged in ?}
+At the login screen you will see a check box 'Stay signed in'. You can disable this option by clicking on the check mark. Then you have to log in every time you start the app. All threads and messages you have loaded previously will stay on your device, so you can read them even without login. But you can not see any new messages or threads and can not receive notifications. 
+
+It is recommended to leave this option checked. The username and password will be stored secure and only accessible for the \appname{} app.
+
+\subsubsection{The first login - How to initialize the password} \label{subsubsec:init}
+When you log in the first time, you will not have set your password. The standard password is 'init'. After a login with this password a dialog window will open and ask you to set your own password. The password must be at least 6 character long. You have to enter it twice to avoid typos. The green button stays disabled till the two new passwords are the same. If you have already set your password and want to cancel the dialog just click the red button.
+
+\subsubsection{How to reset a password}
+If you want to reset your password click on the 'Reset password' button at the menu of the thread overview. This will open a new screen where you can reset your password. Like at the first login you have to enter the new password twice. Now click the 'Reset password' button and the password will be reset. You will see a short message at the screen when the password has been reset. After this you must log in again with your new password. So if you had a typo in your password you will recognize it immediately.
+
+
+\section{Threads}
+\subsubsection{What is a thread at \appname{}?}
+Threads are a way to group messages. In \appname{} you will start a thread about a specific topic. All messages about this topic should be posted within this thread. 
+
+The thread views in the list show information like the title how many messages the thread contains, the username of the creator and the status. If new messages are available the number of messages will be red instead of blue. 
+
+The icon of the status shows whether it is open or already closed. If open, the icon will be the shade of a head. The color of it depends on the role of creator in the project. Is it red the creator is an admin, yellow stands for project leaders and blue for regular user.
+ 
+A check mark indicates that the thread has been closed and the discussion was successful. For example, if the subject was the planing of a meeting and the meeting is over, the status of the thread can be set to SOLVED. 
+If the meeting could not take place, e.g. the participants could not agree on a date, CANCELED would be the right status for this thread.
+\\
+In a detailed view of a thread additionally the date of creation and the description for the thread will be shown.
+And if you are the creator of this thread a button to access the edit dialog to it.
+
+
+\subsubsection{What is the thread screen?}
+At the thread overview you can see all threads you have access to.
+They are ordered in a list. Maybe you need to scroll through the list to see all threads. If you need a thread and you can not see it, you do not have the permission to view it. Tell your admin to give you access to this thread, too. 
+
+The thread overview is also the center of the application. All other screens can be accessed from it and all screens go back to it.\\
+
+
+\subsubsection{How to view details about a thread}
+If you want to see details about a thread make a long click on it. This will open a detailed view of the thread. To close the detailed view just perform a long click on the thread again.
+
+You also will see the more details like the description when you open the thread by a regular click.
+
+\subsubsection{How to create a new thread}
+To create a new thread, open the menu on the upper right corner of the thread view and click 'New thread'. A dialog window will open. Here you can enter the title/name of your thread and a short description about the subject of it. When you have finished this click the green button and the thread will be created. A short message at the screen will confirm that the thread has been created. New threads pop up at the bottom of the thread list. When you can not see your new thread scroll to the end of the list.
+
+
+\subsubsection{How to change a thread title, description or status}
+If you need to change the thread title of description, e.g. because of a typo, you can do this by clicking the button at the detailed view of the thread. Only if you have created the thread you will see this button, so you can not change the threads of others. After clicking this button a dialog window will open. It looks much like the dialog window to create a new thread, except that between the to buttons on the bottom you can change the status of the thread, too. 
+
+Clicking the green button will confirm your entries and modify the thread. 
+
+\subsubsection{How to refresh the thread list}
+If you want to check whether a new thread has been opened, click the 'Refresh' button in the menu of the thread screen. You can close and reopen the app to get the same result.
+
+\subsubsection{How to show the messages of a thread}
+The messages to a thread can be accessed by clicking on the thread view in the thread overview. A screen which shows all messages belonging to it will start then.
+
+\section{Messages}
+\subsubsection{What is a message in \appname{}?}
+A message is a single post within a thread. It can link to a previous post, than it is a reply.
+
+Like the thread views message views show an icon, looking like the shade of a head. This represents the role of the message author. Red is for admins, yellow for project leaders and blue for regular user. This will help you to identify more important messages.
+In case the message is a reply, the head will be replaced by an '@'.
+Additionally the message view shows the username of its author, the date of creation of the message and the message content. At the bottom right corner is the reply button. If a message is your own you can edit it by clicking the edit button (with the pen) besides the reply button.\\
+
+Message views can look different, depending on who created them, whether it is your own message or whether it is a new message.
+A normal message has a white background. New messages have red backgrounds. In both cases the background is slightly transparent. If the message is from the thread creator, the background is less transparent. 
+Your own messages will be aligned at the right side of the screen. All other messages are aligned at the left side.
+
+\subsubsection{What is the message screen?}
+At the message screen you can see all messages to a thread. At the bottom of it is the InputView
+
+\subsubsection{How to write a new message}
+To write a new message follow these steps:
+\begin{enumerate}
+\item Open the desired thread.
+\item Click in the InputView at the bottom of the screen or open the menu and click 'Create a new message'.
+\item Type your message.
+\item Click the green button with the check mark. 
+\item Your new message will be at the top of the message list.
+\end{enumerate}
+
+\subsubsection{How to change a message}
+Like threads you only can change your own messages. If you want to change the content of a message, e.g. because of a typo, just click the edit button at the bottom of the message view. The text will be set to the InputView and you can change it. Click the green button with the check mark when you have made the changes. 
+
+\subsubsection{How to reply to a message}
+If you want to reply to a message, click the reply button on the bottom of the message view. The InputView will open and show the hint 'Reply to ...'. When you have entered your message click the green button to send it.
+
+\subsubsection{How to send a new message when stuck in reply or change mode}
+If you have not finished a reply or the changing of a message the InputView will stay in this mode. To write a new message when stuck in this modes open the menu of the message screen and click 'Create new message'. Alternatively you can go back to the thread screen and reopen the thread.
+
+\subsubsection{How to refresh the message list}
+To refresh the message list open the menu of the message screen and click 'Refresh'. All new messages will be load to the top of the list.
+
+\subsubsection{How to go back to the thread screen}
+Click the back button of your android device to go back to the thread screen.
+
+\subsubsection{How to view the message a reply was written to}
+When you read a reply message you probably want to read the message this is the reply to. To view it click on the '@' icon of the reply. The message list will scroll to the message and the message view will squeeze. 
 
 \section{Settings and login}
-
-\subsection{login}
 
 \subsection{logout}
 
