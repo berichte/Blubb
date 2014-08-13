@@ -204,11 +204,11 @@ A user can access all the other activities from there.
 
 
 Through a click on one list item he starts the MessageActivity. This shows a list of BlubbMessages that belong to the clicked thread. \\
-The ActivityLogin and ActivitySettings will be start when the corresponding item in the menu of ActivityThreads has been clicked. In the ActivityLogin the user can either log in or perform a password reset.
-In the ActivitySettings only the frequency of the PullService can be set. For details about this service see section \ref{subsec:notifications}.
+The LoginActivity and SettingsActivity will be start when the corresponding item in the menu of ThreadsActivity has been clicked. In the LoginActivity the user can either log in or perform a password reset.
+In the SettingsActivity only the frequency of the PullService can be set. For details about this service see section \ref{subsec:notifications}.
 
 
-The ActivityThreads can be accessed from all other Activities with the BackButton.
+The ThreadsActivity can be accessed from all other Activities with the BackButton.
 
 
 The connection between the Activities and the data storage is made by three manager classes:
@@ -255,7 +255,7 @@ If the message is a reply to another message the link points to this message and
 \item \code{Date mDate}\\
 The date of creation of the message. 
 \item \code{boolean isNew}\\
-The field isNew indicates whether the user of the app has read the message, yet. It will be set to 'true' when loading it the first time from the \beapDB{} and to 'false' when the user closes the ActivityMessages for the messages thread (in \code{ActivityMessages.onStop()}). 
+The field isNew indicates whether the user of the app has read the message, yet. It will be set to 'true' when loading it the first time from the \beapDB{} and to 'false' when the user closes the MessagesActivity for the messages thread (in \code{MessagesActivity.onStop()}). 
 
 \end{itemize}
 
@@ -282,7 +282,7 @@ The MessageManager builds BlubbMessages when receiving messages from the \beapSe
 The SQLite database uses the constructor where all fields must be set manually. 
 
 \subsubsection{MessageView}
-A MessageView represents a message in the UI and is created by a BlubbMessage object. It is shown as an item in the ListView of the ActivityMessages.
+A MessageView represents a message in the UI and is created by a BlubbMessage object. It is shown as an item in the ListView of the MessagesActivity.
 
 
 How a MessageView looks depends on three factors. A message from the thread creator will have a lighter background, messages from the current user appear on the right side of the screen the others on the left side and new messages have a red background. Combining these, results in eight different appearances of messages.
@@ -367,7 +367,7 @@ The ThreadManager builds BlubbThreads with the JSON object, when receiving threa
 The SQLite database uses the other constructor to create BlubbThread objects.
 
 \subsubsection{ThreadView}
-ThreadViews are created by BlubbThread objects. In fact there are a small and a big View to represent a thread in the ListView of the ActivityThreads. 
+ThreadViews are created by BlubbThread objects. In fact there are a small and a big View to represent a thread in the ListView of the ThreadsActivity. 
 The small shows the most important information about the thread like the title, creator, status and the message counter. Additionally the big view displays the creator role, date, description and a button for editing the thread. The user can switch these views with a long click on the current ThreadView. 
 
 The file \code{thread_head_layout.xml} defines the layout for the part both views use:
@@ -845,11 +845,11 @@ When developing an application for android it is important to consider the Activ
 
 Usually in \code{onCreate()} the content view for the activity is set. That is, the UI layout is placed in the window of the Activity. Other actions, e.g. saving the current state of the application, should be considered at the appropriate life time events.
 
-\subsection{ActivityThreads}
-At the start of the application the first activity is the ActivityThreads.
+\subsection{ThreadsActivity}
+At the start of the application the first activity is the ThreadsActivity.
 Its main purpose is to display all available threads. 
 But it also acts as the center of the application, since all navigation goes through it.
-At the ActivityThreads the user can perform the following actions :
+At the ThreadsActivity the user can perform the following actions :
 
 \begin{itemize}
 \item{Create a new thread.}\\
@@ -859,13 +859,13 @@ By clicking on 'New thread' in the menu the user opens a dialog where he can ent
 This option in the menu will reload the threads from the \beapDB{}, update the SQLite database and the thread list in the Activity.
 
 \item{Go to the Settings screen.}\\
-The ActivitySettings will start when the user clicked 'Settings' in the menu.
+The SettingsActivity will start when the user clicked 'Settings' in the menu.
 
 \item{Go to the Login screen.}\\
-In case the user needs to log in manually he can start the ActivityLogin with the LoginType LOGIN, by clicking 'Login' in the menu. 
+In case the user needs to log in manually he can start the LoginActivity with the LoginType LOGIN, by clicking 'Login' in the menu. 
 
 \item{Go to the reset password screen.}\\
-To reset the password the user opens the menu and clicks 'Reset password'. This will start the ActivityLogin with the LoginType RESET.
+To reset the password the user opens the menu and clicks 'Reset password'. This will start the LoginActivity with the LoginType RESET.
 
 \item{Log out.}\\
 If the user wants to log out of \appname{} he/she clicks 'Logout' in the menu. In case the password was stored in the SharedPreferences it will be deleted, the PullService will be stopped and the Application will be send to the background. Unfortunately it's not possible to close or kill an application. This is reserved to the android system.
@@ -877,7 +877,7 @@ A long click at one ThreadView will toggle its size between the big and the smal
 The user can modify his own threads by clicking at the 'EditButton', with the pencil icon. This will open a dialog window where the title, description and status can be changed.
 
 \item{Go to the messages of a thread.}
-A click on a thread within the list opens the ActivityMessages for this thread. 
+A click on a thread within the list opens the MessagesActivity for this thread. 
 
 \item{Scroll through the list to see all threads.}\\
 If the list has more than 7 items the user needs to scroll to see all entries.
@@ -885,41 +885,41 @@ If the list has more than 7 items the user needs to scroll to see all entries.
 \end{itemize} 
 
 \subsubsection{Start of the activity}
-When the ActivityThreads is started it will first check whether it is possible to log in at the \beapServer{}. If the username and password is not stored at the SharedPreferences it will check whether threads are available at the local SQLite database. In case neither a login is possible nor any threads are stored the ActivityLogin will be started. Otherwise the BlubbThreads are loaded form the SQLite database and displayed in the ListView of the activity. But if a automatic login is possible the BlubbThreads will be updated form beap and reload to the list, see figure \ref{fig:ActivityThreadsLC}.
+When the ThreadsActivity is started it will first check whether it is possible to log in at the \beapServer{}. If the username and password is not stored at the SharedPreferences it will check whether threads are available at the local SQLite database. In case neither a login is possible nor any threads are stored the LoginActivity will be started. Otherwise the BlubbThreads are loaded form the SQLite database and displayed in the ListView of the activity. But if a automatic login is possible the BlubbThreads will be updated form beap and reload to the list, see figure \ref{fig:ThreadsActivityLC}.
 
 \begin{figure}[!ht]
     \includegraphics[width=\linewidth]{placeholder.png}
-	\caption{ActivityThreads life cycle} 
-	\label{fig:ActivityThreadsLC}
+	\caption{ThreadsActivity life cycle} 
+	\label{fig:ThreadsActivityLC}
 \end{figure}
 
 \subsubsection{Layout structure}
-The Layout for the ActivityThreads is defined in \code{threads_activity_layout.xml}.
+The Layout for the ThreadsActivity is defined in \code{threads_activity_layout.xml}.
 It just defines the ListView for the threads, and a ProgressBar to show the loading process when a network action is performed. 
 
 For a thread within the ListView two different Views are available. The small one (\code{thread_small_layout.xml}) shows only an icon, the title of the thread, who created it and how much messages it contains. Additionally the big view (\code{thread_big_layout.xml}) shows a date when the thread has been created, the role of the creator and the description. If the current user is the creator of this thread, a button will be shown, too. With it the user can open the edit thread dialog. 
 
 
-Two dialog windows are also part of the ActivityThreads. With the CreateThreadDialog (\code{create_thread_dialog.xml}) the user can open a thread for a new subject. For this he/she must enter the title and a description. To change this, e.g. because of a typo, the user can open the EditThreadDialog, defined in (\code{edit_thread_dialog.xml}) and change it. With this the status of a thread can be changed, too.
+Two dialog windows are also part of the ThreadsActivity. With the CreateThreadDialog (\code{create_thread_dialog.xml}) the user can open a thread for a new subject. For this he/she must enter the title and a description. To change this, e.g. because of a typo, the user can open the EditThreadDialog, defined in (\code{edit_thread_dialog.xml}) and change it. With this the status of a thread can be changed, too.
 
-Figure \ref{fig:ActivityThreadsLayouts} shows all layouts that are part of the ActivityThreads.
+Figure \ref{fig:ThreadsActivityLayouts} shows all layouts that are part of the ThreadsActivity.
 
 \begin{figure}[!ht]
 	\centering
-    \includegraphics[width=\linewidth]{ActivityThreadsLayouts.png}
+    \includegraphics[width=\linewidth]{ThreadsActivityLayouts.png}
 	\caption{Layouts for the ActivityThrads.}
-	\label{fig:ActivityThreadsLayouts}
+	\label{fig:ThreadsActivityLayouts}
 \end{figure}
 
 
 \subsubsection{Menu}
-Most actions a user can perform with the ActivityThreads are accessed through the Menu. The Menu is a common UI component, to provide a familiar and consistent user experience. In order to present actions and other options in Activities the Menu API is used \citep{aDefMenu}. Some devices even have a hardware button to access it. The menu for ActivityThreads is defined in \code{activity_threads_menu.xml}.
- The actions for the menu items are determined in the \code{ActivityThreads.class} within the \code{onOptionsItemSelected()} method.
+Most actions a user can perform with the ThreadsActivity are accessed through the Menu. The Menu is a common UI component, to provide a familiar and consistent user experience. In order to present actions and other options in Activities the Menu API is used \citep{aDefMenu}. Some devices even have a hardware button to access it. The menu for ThreadsActivity is defined in \code{activity_threads_menu.xml}.
+ The actions for the menu items are determined in the \code{ThreadsActivity.class} within the \code{onOptionsItemSelected()} method.
 
 \subsubsection{ListView, ArrayAdapter and ThreadViews}
-A ListView is a ViewGroup that displays a list of scrollable items\citep{aDefListView}. The items are loaded to the ListView via a ListAdapter. In case of the ActivityThreads, the ListAdapter is an ThreadArrayAdapter, inheriting a ArrayAdapter and containing a list of BlubbThread objects. The items for the ListView are provided by these objects. Needs a object of its list to be displayed, the ThreadArrayAdapter calls \code{getView()} on it. Depending on the current state of the thread it will return a small or a big View object. 
+A ListView is a ViewGroup that displays a list of scrollable items\citep{aDefListView}. The items are loaded to the ListView via a ListAdapter. In case of the ThreadsActivity, the ListAdapter is an ThreadArrayAdapter, inheriting a ArrayAdapter and containing a list of BlubbThread objects. The items for the ListView are provided by these objects. Needs a object of its list to be displayed, the ThreadArrayAdapter calls \code{getView()} on it. Depending on the current state of the thread it will return a small or a big View object. 
 
-Each thread has an OnClickListener and an OnLongClickListener, both given to it in the constructor of the ThreadArrayAdapter. A click on a thread view creates a new Intent.  The Intent starts an ActivityMessages for the clicked thread. To load the right messages the ActivityMessages needs the thread ID as an Extra in the Intent. The name of that Extra is declared in the constant \code{ActivityMessages.EXTRA_THREAD_ID}.\\
+Each thread has an OnClickListener and an OnLongClickListener, both given to it in the constructor of the ThreadArrayAdapter. A click on a thread view creates a new Intent.  The Intent starts an MessagesActivity for the clicked thread. To load the right messages the MessagesActivity needs the thread ID as an Extra in the Intent. The name of that Extra is declared in the constant \code{MessagesActivity.EXTRA_THREAD_ID}.\\
 
 
 A long click on the view will change its size by switching its layout between \code{thread_small_layout.xml} and \code{thread_big_layout.xml}. A button on the big layout starts the EditThreadDialog.\\
@@ -927,7 +927,7 @@ A long click on the view will change its size by switching its layout between \c
 \subsubsection{Create thread and edit thread dialogues}
 To create a new thread the user has to enter the title and a description in a CreateThreadDialog. The layout for is defined in \code{create_thread_dialog.xml}. It consists of two LinearLayouts. The first contains a TextView for the dialog title, two EditTexts for entering the title and description for the thread. Two buttons are in the second LinearLayout. The green Button is to create a new thread with the entries of the two EditTexts. The red Button cancels the dialog window.
 
-When the user clicks the green button a new AsyncNewThread will be created and executed. For details see \ref{subsubsec:AsyncNewThread}. \code{newThreadDialog()} starts a CreateThreadDialog and must be called from within an ActivityThreads object.
+When the user clicks the green button a new AsyncNewThread will be created and executed. For details see \ref{subsubsec:AsyncNewThread}. \code{newThreadDialog()} starts a CreateThreadDialog and must be called from within an ThreadsActivity object.
 The dialog to modify a thread is similar build like the dialog to create a new thread. Except that between the two buttons lays a Spinner, containing the different statuses for the thread. A Spinner is an android equivalent for a drop-down list or combo box. The user can select one of three predefined items. For the status they are:
 \begin{itemize}
 \item OPEN
@@ -936,10 +936,10 @@ The dialog to modify a thread is similar build like the dialog to create a new t
 \end{itemize}
 
 
-If the user hits the green button on this dialog an AsyncSetThread will be executed. For details see section \ref{subsubsec:AsyncSetThread}. The EditThreadDialog starts if \code{editThreadDialog()} is called from within an ActivityThreads object.
+If the user hits the green button on this dialog an AsyncSetThread will be executed. For details see section \ref{subsubsec:AsyncSetThread}. The EditThreadDialog starts if \code{editThreadDialog()} is called from within an ThreadsActivity object.
 
-\subsection{ActivityMessages}
-The ActivityMessages will start when the user clicks on one thread in the ActivityThreads. Its purpose is to show all messages belonging to the clicked thread. The appearance of a message depends on who has created it and whether it is new or has been loaded previously. The user can perform different actions in this activity:
+\subsection{MessagesActivity}
+The MessagesActivity will start when the user clicks on one thread in the ThreadsActivity. Its purpose is to show all messages belonging to the clicked thread. The appearance of a message depends on who has created it and whether it is new or has been loaded previously. The user can perform different actions in this activity:
 
 \begin{itemize}
 \item Write a new message.\\
@@ -956,36 +956,36 @@ The user can modify own messages by clicking the edit button besides the reply b
 
 \end{itemize}
 
-\subsubsection{Start of the ActivityMessages}
-It is important to add a thread ID as an Extra to the Intent that starts the ActivityMessages. With this ID the messages can be requested form the SQLite database and the \beapDB{}. On start of the activity it will first prepare the message ListView with a header containing the threads title, creator and description. The layout for the header is defined in \code{messages_activity_lv_header.xml}. It will also start the InputView, so the user can enter messages. After that the messages are loaded from the SQLite database and then from the \beapDB{}. In this way the user sees most messages immediately and the new just pop up when the used AsyncGetAllMessagesToThread has finished its task. 
+\subsubsection{Start of the MessagesActivity}
+It is important to add a thread ID as an Extra to the Intent that starts the MessagesActivity. With this ID the messages can be requested form the SQLite database and the \beapDB{}. On start of the activity it will first prepare the message ListView with a header containing the threads title, creator and description. The layout for the header is defined in \code{messages_activity_lv_header.xml}. It will also start the InputView, so the user can enter messages. After that the messages are loaded from the SQLite database and then from the \beapDB{}. In this way the user sees most messages immediately and the new just pop up when the used AsyncGetAllMessagesToThread has finished its task. 
 
 \subsubsection{Layout structure}
-The file \code{activity_messages_layout.xml} defines the layout for the ActivityMessages. Like the ActivityThreads it contains a ListView and a ProgressBar. The ListView shows the messages and the ProgressBar indicates that a background process is in progress. On the bottom of the activity window the InputView supplements the layout. Here the user enters and sends new messages. It consists of an EditText and a Button. For instance a new message can be entered to the EditText and be sent by clicking the Button. 
-The InputView is used to write a new, modify or reply to an existing message. For this it has different modes that are set up by the methods \code{startInputView()}, \code{ replyToMessage()} and \code{changeMessage()} in the ActivityMessages.
+The file \code{activity_messages_layout.xml} defines the layout for the MessagesActivity. Like the ThreadsActivity it contains a ListView and a ProgressBar. The ListView shows the messages and the ProgressBar indicates that a background process is in progress. On the bottom of the activity window the InputView supplements the layout. Here the user enters and sends new messages. It consists of an EditText and a Button. For instance a new message can be entered to the EditText and be sent by clicking the Button. 
+The InputView is used to write a new, modify or reply to an existing message. For this it has different modes that are set up by the methods \code{startInputView()}, \code{ replyToMessage()} and \code{changeMessage()} in the MessagesActivity.
 From the Menu the user can refresh the messages and start the creating of a new one. \\
 
 The ListView of the ActivityMessage is populated with MessageViews through a MessageArrayAdapter inheriting from the ArrayAdapter class. 
 In its constructor it expects a list of BlubbMessages. To get the View for a message the MessageArrayAdapter just invokes \code{getView()} on the corresponding object of this list. 
 
 \subsubsection{Menu}
-The menu at the ActionBar of a ActivityMessages has only two items. One to sets up the InputView for creating a new message, the other just to reloads the messages from the \beapServer{}. Clicking the item 'Create a new message' will simply call \code{startInputView()}, which sets up the InputView properly. 'Refresh' executes an AsyncGetAllMessagesToThread, for details see section  \ref{subsubsec:AsyncGetAllMessagesToThread}.
+The menu at the ActionBar of a MessagesActivity has only two items. One to sets up the InputView for creating a new message, the other just to reloads the messages from the \beapServer{}. Clicking the item 'Create a new message' will simply call \code{startInputView()}, which sets up the InputView properly. 'Refresh' executes an AsyncGetAllMessagesToThread, for details see section  \ref{subsubsec:AsyncGetAllMessagesToThread}.
 
-\subsection{ActivityLogin}
-Only registered user can access the \beapDB{}. For this they get a username and a password. With these can the user perform a login in the ActivityLogin. This Activity has two different modes. One for a regular login the other to reset the password. The mode is triggered by an Extra contained in the starting Intent. This Extra is a LoginType and can be accessed like shown in listing \ref{lst:LoginType}. The constant \code{EXTRA_LOGIN_TYPE} holds the name needed to access the extra in the Intent.
+\subsection{LoginActivity}
+Only registered user can access the \beapDB{}. For this they get a username and a password. With these can the user perform a login in the LoginActivity. This Activity has two different modes. One for a regular login the other to reset the password. The mode is triggered by an Extra contained in the starting Intent. This Extra is a LoginType and can be accessed like shown in listing \ref{lst:LoginType}. The constant \code{EXTRA_LOGIN_TYPE} holds the name needed to access the extra in the Intent.
 \lstset{language=java}
 \begin{lstlisting}[caption=Accessing the LoginType., label=lst:LoginType]
 	Intent intent = getIntent();
     LoginType loginType = (LoginType)intent.getSerializableExtra(EXTRA_LOGIN_TYPE);
 \end{lstlisting}
 
-LOGIN is the standard LoginType. If the user enters a valid username and password and clicks the LoginButton it will perform a login and start the ActivityThreads. 
+LOGIN is the standard LoginType. If the user enters a valid username and password and clicks the LoginButton it will perform a login and start the ThreadsActivity. 
 
-Was the AcitvityLogin started with the LoginType RESET, the user can enter the username, password, a new password and the new password again to detect typos early. Clicking the LoginButton will then reset the password and redirect to the ActivityLogin for a regular login. 
+Was the AcitvityLogin started with the LoginType RESET, the user can enter the username, password, a new password and the new password again to detect typos early. Clicking the LoginButton will then reset the password and redirect to the LoginActivity for a regular login. 
 
 The very first login is a special case. At this point the user has not yet chosen an own password. 'init' is the standard password and must be reset. If the user sends a login with the init password a dialog window will pop up in which the password must be reset. 
 
 \subsubsection{Layout structure}
-Compared to the ActivityThreads or ActivityMessages the layout of ActivityLogin is pretty simple. It contains a ImageView for the logo, four EditTexts for the username and passwords, a Button and a CheckBox.
+Compared to the ThreadsActivity or MessagesActivity the layout of LoginActivity is pretty simple. It contains a ImageView for the logo, four EditTexts for the username and passwords, a Button and a CheckBox.
 
 \begin{itemize}
 \item \code{login_activity_logo_iv}\\
@@ -1014,7 +1014,7 @@ If this CheckBox is checked when the user clicks the LoginButton, the username a
 
 The file \code{login_activity_layout.xml} contains the layout for the LoginActivity. 
 
-The InitDialog is defined in the file \code{password_init_dialog.xml}. Like the ActivityLogin it contains 4 EditTexts for username, password, new password and the confirmation of the new password. Since the user already has entered the username and the init password this fields will be filled in advance. The green Button starts a AsyncResetPassword, the red Button cancels the dialog. 
+The InitDialog is defined in the file \code{password_init_dialog.xml}. Like the LoginActivity it contains 4 EditTexts for username, password, new password and the confirmation of the new password. Since the user already has entered the username and the init password this fields will be filled in advance. The green Button starts a AsyncResetPassword, the red Button cancels the dialog. 
 
 \subsection{Notifications} \label{subsec:notifications}
 A notification is a message you can display to the user outside of your application's normal UI. When you tell the system to issue a notification, it first appears as an icon in the notification area. To see the details of the notification, the user opens the notification drawer. Both the notification area and the notification drawer are system-controlled areas that the user can view at any time \citep{aDefNotifications}.
@@ -1026,9 +1026,9 @@ For \appname{} the notifications are used to show new messages or new threads. A
 	\label{fig:notifications}
 \end{figure}
 
-A click on a notification in the notification drawer will open either the ActivityThreads or the ActivityMessages. If there is one new message the ActivityMessages will open for the corresponding thread. For more than one message or a thread notification the ActivityThreads will be started.
+A click on a notification in the notification drawer will open either the ThreadsActivity or the MessagesActivity. If there is one new message the MessagesActivity will open for the corresponding thread. For more than one message or a thread notification the ThreadsActivity will be started.
 
-The PullService only can perform a quickCheck when the user has accepted to stay logged in in the ActivityLogin, otherwise the mandatory login is not possible.
+The PullService only can perform a quickCheck when the user has accepted to stay logged in in the LoginActivity, otherwise the mandatory login is not possible.
 
 \section{Asynchronous tasks} \label{sec:AsyncTasks}
 \subsubsection{AsyncTasks}
@@ -1061,7 +1061,7 @@ private class AsyncNewThread extends AsyncTask<String, Void, BlubbThread> {
             try {
             	ThreadManager manager = ThreadManager.getInstance();
             	BlubbThread thread = manager.createThread(
-                        ActivityThreads.this, title, description);
+                        ThreadsActivity.this, title, description);
                 return thread;
             } catch (BlubbException e) {
                 this.blubbException = e;
@@ -1079,7 +1079,7 @@ private class AsyncNewThread extends AsyncTask<String, Void, BlubbThread> {
 
 Mostly the Exceptions are forwarded to the BlubbApplication. This will show a Toast message according to the type of Exception. The text for each message is defined in the file \code{res/values/strings.xml}.
 
-\subsection{AsyncTasks of the ActivityThreads}
+\subsection{AsyncTasks of the ThreadsActivity}
 
 \subsubsection{AsyncUpdateThreads}
 \label{AsyncUpdateThreads}
@@ -1101,7 +1101,7 @@ Therefor an AsyncCheckLogin is executed. It does not need any parameter since it
 The task is executed by calling \code{getSessionID(..)} at the SessionManager.
 
 
-If it is possible to log in the threads will be updated and reload to the thread ListView. If not, the thread list is loaded immediately from the SQLite database. In case the thread list from the database is empty, this must be the first login of the user and the ActivityLogin will be started.
+If it is possible to log in the threads will be updated and reload to the thread ListView. If not, the thread list is loaded immediately from the SQLite database. In case the thread list from the database is empty, this must be the first login of the user and the LoginActivity will be started.
 
 \subsubsection{AsyncNewThread}
 \label{subsubsec:AsyncNewThread}
@@ -1138,7 +1138,7 @@ If the modification of the thread was successful a Toast informs the user about 
 \subsection{AsyncTasks of the AcitvityMessages}
 
 \subsubsection{AsyncGetAllMessagesToThread} \label{subsubsec:AsyncGetAllMessagesToThread}
-With a AsyncGetAllMessagesToThread the messages can be updated from the \beapDB{} and shown on the UI in the ActivityMessages. In the background thread it simply calls \code{getAllMessagesForThread()} on the MessageManager. A string containing the thread ID is the only argument needed and is given to this AsyncTask in the constructor. Listing \ref{lst:AsyncGetAllMsgs} shows an example, how to use an AsyncGetAllMessagesToThread.
+With a AsyncGetAllMessagesToThread the messages can be updated from the \beapDB{} and shown on the UI in the MessagesActivity. In the background thread it simply calls \code{getAllMessagesForThread()} on the MessageManager. A string containing the thread ID is the only argument needed and is given to this AsyncTask in the constructor. Listing \ref{lst:AsyncGetAllMsgs} shows an example, how to use an AsyncGetAllMessagesToThread.
 \begin{lstlisting}[caption=AsyncGetAllMessagesToThread example, label=lst:AsyncGetAllMsgs]
 	...
 	String threadID = "t2014-07-03_165629_B-Richter";
@@ -1147,7 +1147,7 @@ With a AsyncGetAllMessagesToThread the messages can be updated from the \beapDB{
 	...
 \end{lstlisting}
 
-After executing the task it will update the MessageArrayAdapter in the ActivityMessages.
+After executing the task it will update the MessageArrayAdapter in the MessagesActivity.
 
 \subsubsection{AsyncSendMessage}
 An AsyncSendMessage is used to create new messages. The arguments for this are Strings with the thread ID, the message title, the content and if it is a reply, a message ID. An example how to use AsyncSendMessage is shown in listing \ref{lst:AsyncSendMsg}.
@@ -1164,22 +1164,22 @@ An AsyncSendMessage is used to create new messages. The arguments for this are S
 	...
 \end{lstlisting}
 
-When the new message has been created the AsyncSendMessage will update the ListView in the ActivityMessages through the MessageArrayAdapter and show the new message on top of the list.
+When the new message has been created the AsyncSendMessage will update the ListView in the MessagesActivity through the MessageArrayAdapter and show the new message on top of the list.
 
 \subsubsection{AsyncSetMessage}
 The AsyncSetMessage will update an existing message at the \beapDB{} as well as at the SQLite database. It works pretty much like the AsyncSendMessage, except that the only argument is the modified BlubbMessage object. 
 
-\subsection{AsyncTasks of the ActivityLogin}\label{subsec:AsyncLogin}
+\subsection{AsyncTasks of the LoginActivity}\label{subsec:AsyncLogin}
 \subsubsection{AsyncLogin}
 An AsyncLogin will perform a login at the \beapServer{} and store the SessionInfo in the SessionManager, so all requests to the \beapDB{} can use the session ID to verify the identity of the user. To execute a login a string with the username and one with the password is needed as arguments in the \code{execute()} method.
-After a successful login the ActivityThreads will be started and if the user has checked the CheckBox the username and password will be stored in the SharedPreferences. If a PasswordInitException has been caught, the password init dialog will be started by calling \code{showPasswordInitDialog()} of the current ActivityLogin. 
+After a successful login the ThreadsActivity will be started and if the user has checked the CheckBox the username and password will be stored in the SharedPreferences. If a PasswordInitException has been caught, the password init dialog will be started by calling \code{showPasswordInitDialog()} of the current LoginActivity. 
 
 \subsubsection{AsyncResetPassword}
-With a AsyncResetPassword object the password of a user can be reset. It needs four strings as arguments in the \code{execute()} method, the username, old password, new password and the new password again to confirm it. After it has finished its task, it will start the ActivityLogin with the LoginType LOGIN. So if the user has entered a wrong new password this will be recognized immediately. Has a init password dialog started the AsyncResetPassword, it will be closed.
+With a AsyncResetPassword object the password of a user can be reset. It needs four strings as arguments in the \code{execute()} method, the username, old password, new password and the new password again to confirm it. After it has finished its task, it will start the LoginActivity with the LoginType LOGIN. So if the user has entered a wrong new password this will be recognized immediately. Has a init password dialog started the AsyncResetPassword, it will be closed.
 
 \section{Android Manifest}
 Every application must have an \code{AndroidManifest.xml} file (with precisely that name) in its root directory. The manifest file presents essential information about an app to the Android system \citep{aDefManifest}.
-In \appname{} the manifest declares the ActivityThread as the main activity and the activities ActivityLogin, ActivityMessages and ActivitySettings. The PullService is also defined in the manifest. Since the app uses a custom Application class this is stated within the application tag.\\
+In \appname{} the manifest declares the ActivityThread as the main activity and the activities LoginActivity, MessagesActivity and SettingsActivity. The PullService is also defined in the manifest. Since the app uses a custom Application class this is stated within the application tag.\\
 
 To make use of protected features of an android device, \code{<uses-permission>} tags declaring the permissions must included in the \code{AndroidManifest.xml} \citep{aDefPermissions}.
 
