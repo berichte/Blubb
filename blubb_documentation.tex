@@ -9,11 +9,14 @@
 
 \usepackage{floatrow}
 
+\usepackage[american]{babel}
 \usepackage[
 	backend=biber,
-	style=ieee,
+	style=apa,
 	natbib=true]{biblatex}
 \addbibresource{thesisBib.bib}
+
+\DeclareLanguageMapping{english}{american-apa}
 
 \usepackage{listings}
 \usepackage{color}
@@ -98,7 +101,7 @@ project management \citep{mihaela2013measurement}.
 \section{General goals}
 
 
-\chapter{Execution}
+\chapter{Implementation of the project}
 
 \section{Backlog}
 
@@ -155,17 +158,13 @@ project management \citep{mihaela2013measurement}.
    \end{itemize}
 \section{Current state}
 
-\section{Next steps}
-
 \chapter{Technical basics}
 
 \section{Beap and BeapDB}
 
 \section{Android}
 
-\section{Permissions and user types}
-
-\chapter{Blubb android app}
+\chapter{Blubb Android app}
 \section{Architecture overview}
  Beap lightweight user bulletin board (\blubb{}) is an application to manage the communication within a project. A mobile front end improves the availability of the project members. They become more reachable with their smartphones and tablets. Unlike a mobile website a native app offers the possibility that the user can read messages even offline. Additionally it can use notifications to grab the attention of users and improve their availability. \\
 In order to realize this task an android application (\appname{} ) has been implemented. This technical documentation describes the way  \appname{} is operating.\\
@@ -575,7 +574,7 @@ For details see appendix A.
 
 \subsection{SQLite as a local database}
 
-The android system offers different storage options citep{aDefStorageOpt}:
+The android system offers different storage options \citep{aDefStorageOpt}:
 \begin{itemize}
 \item{shared Preferences \\key value pairs}
 \item{internal storage \\private data for app e.g in xml}
@@ -1324,21 +1323,11 @@ Click the back button of your android device to go back to the thread screen.
 \subsubsection{How to view the message a reply was written to}
 When you read a reply message you probably want to read the message this is the reply to. To view it click on the '@' icon of the reply. The message list will scroll to the message and the message view will squeeze. 
 
-\section{Settings and login}
+\section{Notifications}
 
-\subsection{logout}
+\chapter{Evaluation}
 
-\subsection{Reset the password}
-
-\subsection{First login}
-
-\subsection{Settings}
-
-\subsection{Stay logged in}
-
-\chapter{Valuation}
-
-\chapter{Prospect blubb}
+\chapter{Prospect of blubb}
 
 \printbibliography
 %\bibliography{thesisBib}
